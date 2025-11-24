@@ -13,6 +13,7 @@ import { supabase } from "@/utils/supabase";
 import { DoneDialog } from "./activity-done-dialog";
 import { CreateActivityDialog } from "./activity-create-dialog";
 import { type DateRange } from "react-day-picker";
+import { Badge } from "@/components/ui/badge";
 
 interface Company {
     account_reference_number: string;
@@ -161,9 +162,12 @@ export const Progress: React.FC<NewTaskProps> = ({
         return true;
     };
 
-    // Merge activity with company info, filter and sort
+    // Define allowed statuses as an array
+    const allowedStatuses = ["On-Progress", "Assisted", "Quote-Done", "SO-Done"];
+
+    // Merge activity with company info, filter by allowed statuses and date, then map and sort
     const mergedData = activities
-        .filter((a) => a.status === "On-Progress")
+        .filter((a) => allowedStatuses.includes(a.status)) // <-- filter by multiple statuses
         .filter((a) => isDateInRange(a.date_created, dateCreatedFilterRange))
         .map((activity) => {
             const company = companies.find(
@@ -173,11 +177,12 @@ export const Progress: React.FC<NewTaskProps> = ({
                 ...activity,
                 company_name: company?.company_name ?? "Unknown Company",
                 contact_number: company?.contact_number ?? "-",
-                type_client: company?.type_client ?? "",  // <--- dito kunin galing company
+                type_client: company?.type_client ?? "", // <-- from company
                 id: activity.activity_reference_number,
             };
         })
         .sort((a, b) => new Date(b.date_updated).getTime() - new Date(a.date_updated).getTime());
+
 
 
     const isLoading = loadingCompanies || loadingActivities;
@@ -247,53 +252,77 @@ export const Progress: React.FC<NewTaskProps> = ({
 
             <div className="max-h-[400px] overflow-auto space-y-8 custom-scrollbar">
                 <Accordion type="single" collapsible className="w-full">
-                    {mergedData.map((item) => (
-                        <AccordionItem key={item.id} value={item.id}>
-                            <div className="flex justify-between items-center p-2 cursor-pointer select-none">
-                                <AccordionTrigger className="flex-1 text-xs font-semibold">
-                                    {item.company_name}
-                                </AccordionTrigger>
+                    {mergedData.map((item) => {
+                        // Determine badge color based on status
+                        let badgeColor: "default" | "secondary" | "destructive" | "outline" = "default";
 
-                                <div className="flex gap-2 ml-4">
-                                    <CreateActivityDialog
-                                        target_quota={target_quota} // ← galing sa user details
-                                        referenceid={item.referenceid}
-                                        tsm={item.tsm}
-                                        manager={item.manager}
-                                        type_client={item.type_client}
-                                        activityReferenceNumber={item.activity_reference_number}
-                                        accountReferenceNumber={item.account_reference_number}
-                                        onCreated={(newActivity) => setActivities((curr) => [...curr, newActivity])}
-                                    />
+                        if (item.status === "Assisted" || item.status === "SO-Done") {
+                            badgeColor = "secondary";
+                        } else if (item.status === "Quote-Done") {
+                            badgeColor = "outline";
+                        }
 
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        disabled={updatingId === item.id}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            openDoneDialog(item.id);
-                                        }}
-                                    >
-                                        {updatingId === item.id ? "Updating..." : "Done"}
-                                    </Button>
-                                </div>
-                            </div>
+                        return (
+                            <AccordionItem key={item.id} value={item.id}>
+                                <AccordionItem key={item.id} value={item.id}>
+                                    {/* Header container */}
+                                    <div className="p-2 cursor-pointer select-none">
+                                        <div className="flex justify-between items-center">
+                                            {/* Company name */}
+                                            <AccordionTrigger className="flex-1 text-xs font-semibold">
+                                                {item.company_name}
+                                            </AccordionTrigger>
 
-                            <AccordionContent className="text-xs px-4 py-2">
-                                <p>
-                                    <strong>Contact Number:</strong> {item.contact_number}
-                                </p>
-                                <p>
-                                    <strong>Account Reference Number:</strong> {item.account_reference_number}
-                                </p>
-                                <p>
-                                    <strong>Date Created:</strong>{" "}
-                                    {new Date(item.date_created).toLocaleDateString()}
-                                </p>
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
+                                            {/* Action buttons */}
+                                            <div className="flex gap-2 ml-4">
+                                                <CreateActivityDialog
+                                                    target_quota={target_quota}
+                                                    referenceid={item.referenceid}
+                                                    tsm={item.tsm}
+                                                    manager={item.manager}
+                                                    type_client={item.type_client}
+                                                    activityReferenceNumber={item.activity_reference_number}
+                                                    accountReferenceNumber={item.account_reference_number}
+                                                    onCreated={(newActivity) => setActivities((curr) => [...curr, newActivity])}
+                                                />
+
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    disabled={updatingId === item.id}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openDoneDialog(item.id);
+                                                    }}
+                                                >
+                                                    {updatingId === item.id ? "Updating..." : "Done"}
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Badge below company name and buttons */}
+                                        <div className="ml-1">
+                                            <Badge variant={badgeColor} className="text-[8px]">
+                                                {item.status.replace("-", " ")}
+                                            </Badge>
+                                        </div>
+                                    </div>
+
+                                    <AccordionContent className="text-xs px-4 py-2">
+                                        <p>
+                                            <strong>Contact Number:</strong> {item.contact_number}
+                                        </p>
+                                        <p>
+                                            <strong>Account Reference Number:</strong> {item.account_reference_number}
+                                        </p>
+                                        <p>
+                                            <strong>Date Created:</strong> {new Date(item.date_created).toLocaleDateString()}
+                                        </p>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </AccordionItem>
+                        );
+                    })}
                 </Accordion>
             </div>
 

@@ -25,6 +25,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio"
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { type DateRange } from "react-day-picker";
 
 interface UserDetails {
     id: string;
@@ -54,6 +55,9 @@ export default function NavProfilePage() {
     >("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [dateCreatedFilterRange, setDateCreatedFilterRangeAction] =
+        useState<DateRange | undefined>(undefined);
+
 
     useEffect(() => {
         if (!userId) {
@@ -453,7 +457,11 @@ export default function NavProfilePage() {
                             </div>
 
                         </SidebarInset>
-                        <SidebarRight userId={userId ?? undefined} />
+                        <SidebarRight
+                            userId={userId ?? undefined}
+                            dateCreatedFilterRange={dateCreatedFilterRange}
+                            setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction}
+                        />
                     </SidebarProvider>
                 </FormatProvider>
             </UserProvider>
