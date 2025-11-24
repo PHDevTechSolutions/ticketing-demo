@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { UserProvider, useUser } from "@/contexts/UserContext";
@@ -28,7 +28,7 @@ function SettingsContent() {
   // Get userId from URL query param and sync to context
   const queryUserId = searchParams?.get("id") ?? "";
   const [dateCreatedFilterRange, setDateCreatedFilterRangeAction] =
-          useState<DateRange | undefined>(undefined);
+    useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
     if (queryUserId && queryUserId !== userId) {
@@ -168,7 +168,9 @@ export default function SettingsPage() {
     <UserProvider>
       <FormatProvider>
         <SidebarProvider>
-          <SettingsContent />
+          <Suspense fallback={<div>Loading...</div>}>
+            <SettingsContent />
+          </Suspense>
         </SidebarProvider>
       </FormatProvider>
     </UserProvider>

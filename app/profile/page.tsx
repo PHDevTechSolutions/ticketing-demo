@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { UserProvider } from "@/contexts/UserContext";
@@ -240,6 +240,7 @@ export default function NavProfilePage() {
             <UserProvider>
                 <FormatProvider>
                     <SidebarProvider>
+                        <Suspense fallback={<div>Loading...</div>}>
                         <SidebarLeft />
                         <SidebarInset>
                             <header className="bg-background sticky top-0 flex h-14 shrink-0 items-center gap-2">
@@ -461,6 +462,7 @@ export default function NavProfilePage() {
                             dateCreatedFilterRange={dateCreatedFilterRange}
                             setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction}
                         />
+                        </Suspense>
                     </SidebarProvider>
                 </FormatProvider>
             </UserProvider>
