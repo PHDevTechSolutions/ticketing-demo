@@ -489,6 +489,7 @@ export function AccountDialog({
                     });
                   }}
                   placeholder="Contact Person"
+                  className="uppercase"
                 />
                 <Button
                   type="button"
@@ -537,6 +538,7 @@ export function AccountDialog({
                     });
                   }}
                   placeholder="Contact Number"
+                  className="uppercase"
                 />
                 <Button
                   type="button"
