@@ -15,6 +15,7 @@ import { OutboundSheet } from "./activity-sheet-outbound";
 import { InboundSheet } from "./activity-sheet-inbound";
 import { QuotationSheet } from "./activity-sheet-quotation";
 import { SOSheet } from "./activity-sheet-so";
+import { DRSheet } from "./activity-sheet-dr";
 
 interface Activity {
     id: string;
@@ -48,6 +49,11 @@ interface Activity {
     so_number?: string;
     so_amount?: string;
 
+    actual_sales?: string;
+    dr_number?: string;
+    payment_terms?: string;
+    delivery_date?: string;
+
     date_followup?: string;
     remarks: string;
 
@@ -61,7 +67,7 @@ interface CreateActivityDialogProps {
     tsm: string;
     manager: string;
     target_quota?: string;
-    type_client: string; // required now
+    type_client: string;
     activityReferenceNumber?: string;
     accountReferenceNumber?: string;
 }
@@ -122,6 +128,11 @@ export function CreateActivityDialog({
     const [soNumber, setSoNumber] = useState("");
     const [soAmount, setSoAmount] = useState("");
 
+    const [drNumber, setDrNumber] = useState("");
+    const [siAmount, setSiAmount] = useState("");
+    const [paymentTerms, setPaymentTerms] = useState("");
+    const [deliveryDate, setDeliveryDate] = useState("");
+
     const [followUpDate, setFollowUpDate] = useState("");
     const [status, setStatus] = useState("");
     const [remarks, setRemarks] = useState("");
@@ -139,7 +150,6 @@ export function CreateActivityDialog({
     const initialState = {
         activityRef: activityReferenceNumber || "",
         accountRef: accountReferenceNumber || "",
-        typeActivity: "",
         source: "",
         callback: "",
         callStatus: "",
@@ -161,7 +171,6 @@ export function CreateActivityDialog({
     function resetForm() {
         setActivityRef(initialState.activityRef);
         setAccountRef(initialState.accountRef);
-        setTypeActivity(initialState.typeActivity);
         setSource(initialState.source);
         setCallback(initialState.callback);
         setCallStatus(initialState.callStatus);
@@ -241,10 +250,6 @@ export function CreateActivityDialog({
                 return true;
 
             case 4:
-                if (!callType.trim()) {
-                    toast.error("Please select Call Type.");
-                    return false;
-                }
                 if (typeActivity === "Outbound Calls" && !followUpDate.trim()) {
                     toast.error("Please select Follow Up Date.");
                     return false;
@@ -264,29 +269,6 @@ export function CreateActivityDialog({
         }
     };
 
-    const validateRequiredFields = () => {
-        if (
-            !activityRef.trim() ||
-            !accountRef.trim() ||
-            !status.trim() ||
-            !type_client.trim() ||
-            !typeActivity.trim() ||
-            (typeActivity === "Outbound Calls" && !source.trim()) ||
-            (typeActivity === "Outbound Calls" && !callStatus.trim()) ||
-            (typeActivity === "Outbound Calls" && !callType.trim()) ||
-            (typeActivity === "Outbound Calls" && !followUpDate.trim()) ||
-            (typeActivity === "Inbound Calls" && !callType.trim()) ||
-            !referenceid.trim() ||
-            !tsm.trim() ||
-            !manager.trim() ||
-            !callType.trim() || // callType again to be safe
-            !status.trim()
-        ) {
-            return false;
-        }
-        return true;
-    };
-
     const handleBack = () => setStep((prev) => (prev > 1 ? prev - 1 : prev));
 
     const handleNext = () => {
@@ -296,11 +278,6 @@ export function CreateActivityDialog({
     };
 
     const handleSave = async () => {
-        if (!validateRequiredFields()) {
-            toast.error("Please fill all required fields except Callback.");
-            return;
-        }
-
         setLoading(true);
 
         const newActivity: Activity = {
@@ -331,6 +308,11 @@ export function CreateActivityDialog({
             so_number: soNumber || undefined,
             so_amount: soAmount || undefined,
 
+            dr_number: drNumber || undefined,
+            actual_sales: siAmount || undefined,
+            payment_terms: paymentTerms || undefined,
+            delivery_date: deliveryDate || undefined,
+
             date_followup: followUpDate || undefined,
             remarks,
 
@@ -339,7 +321,6 @@ export function CreateActivityDialog({
         };
 
         try {
-            // Save activity
             const res = await fetch("/api/act-save-activity", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -353,7 +334,6 @@ export function CreateActivityDialog({
                 return;
             }
 
-            // Update activity status
             const statusRes = await fetch("/api/act-edit-status-activity", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -372,19 +352,17 @@ export function CreateActivityDialog({
 
             toast.success("Activity created and status updated successfully!");
 
-            resetForm(); // Reset all fields
+            resetForm();
             setStep(1);
             setSheetOpen(false);
+            onCreated(newActivity);
 
-            onCreated(newActivity); // pass the complete new activity
         } catch (error) {
             toast.error("Server error. Please try again.");
         } finally {
             setLoading(false);
         }
     };
-
-
 
     // Intercept sheet close request:
     const onSheetOpenChange = (open: boolean) => {
@@ -513,6 +491,17 @@ export function CreateActivityDialog({
                                                     </Field>
                                                 </FieldLabel>
 
+                                                <FieldLabel>
+                                                    <Field orientation="horizontal">
+                                                        <FieldContent>
+                                                            <FieldTitle>Delivered / Closed Transaction</FieldTitle>
+                                                            <FieldDescription>
+                                                                Handle completed transactions including delivery confirmation, closing documentation, and final client coordination.
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <RadioGroupItem value="Delivered / Closed Transaction" />
+                                                    </Field>
+                                                </FieldLabel>
                                             </RadioGroup>
                                         </FieldSet>
                                     </FieldGroup>
@@ -547,6 +536,7 @@ export function CreateActivityDialog({
                                     loading={loading}
                                     handleBack={handleBack}
                                     handleNext={handleNext}
+                                    handleSave={handleSave}
                                 />
                             )}
 
@@ -564,6 +554,7 @@ export function CreateActivityDialog({
                                     setStatus={setStatus}
                                     handleBack={handleBack}
                                     handleNext={handleNext}
+                                    handleSave={handleSave}
                                 />
                             )}
 
@@ -593,6 +584,7 @@ export function CreateActivityDialog({
                                     setStatus={setStatus}
                                     handleBack={handleBack}
                                     handleNext={handleNext}
+                                    handleSave={handleSave}
                                 />
                             )}
 
@@ -614,17 +606,34 @@ export function CreateActivityDialog({
                                     setStatus={setStatus}
                                     handleBack={handleBack}
                                     handleNext={handleNext}
+                                    handleSave={handleSave}
                                 />
-
                             )}
 
+                            {typeActivity === "Delivered / Closed Transaction" && (
+                                <DRSheet
+                                    step={step}
+                                    setStep={setStep}
+                                    source={source}
+                                    setSource={setSource}
+                                    drNumber={drNumber}
+                                    setDrNumber={setDrNumber}
+                                    siAmount={siAmount}
+                                    setSiAmount={setSiAmount}
+                                    paymentTerms={paymentTerms}
+                                    setPaymentTerms={setPaymentTerms}
+                                    deliveryDate={deliveryDate}
+                                    setDeliveryDate={setDeliveryDate}
+                                    remarks={remarks}
+                                    setRemarks={setRemarks}
+                                    status={status}
+                                    setStatus={setStatus}
+                                    handleBack={handleBack}
+                                    handleNext={handleNext}
+                                    handleSave={handleSave}
+                                />
+                            )}
 
-                            {/* Only show Save Activity button if status and remarks are filled */}
-                            {status.trim() && remarks.trim() ? (
-                                <Button onClick={handleSave} disabled={loading}>
-                                    {loading ? "Saving..." : "Save Activity"}
-                                </Button>
-                            ) : ("")}
                         </div>
                     )}
 

@@ -177,12 +177,11 @@ export const Progress: React.FC<NewTaskProps> = ({
                 ...activity,
                 company_name: company?.company_name ?? "Unknown Company",
                 contact_number: company?.contact_number ?? "-",
-                type_client: company?.type_client ?? "", // <-- from company
-                id: activity.activity_reference_number,
+                type_client: company?.type_client ?? "",
             };
         })
-        .sort((a, b) => new Date(b.date_updated).getTime() - new Date(a.date_updated).getTime());
 
+        .sort((a, b) => new Date(b.date_updated).getTime() - new Date(a.date_updated).getTime());
 
 
     const isLoading = loadingCompanies || loadingActivities;

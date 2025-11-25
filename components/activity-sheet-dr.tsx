@@ -15,14 +15,17 @@ interface Props {
     source: string;
     setSource: (v: string) => void;
 
-    soNumber: string;
-    setSoNumber: (v: string) => void;
+    drNumber: string;
+    setDrNumber: (v: string) => void;
 
-    soAmount: string;
-    setSoAmount: (v: string) => void;
+    siAmount: string;
+    setSiAmount: (v: string) => void;
 
-    callType: string;
-    setCallType: (v: string) => void;
+    paymentTerms: string;
+    setPaymentTerms: (v: string) => void;
+
+    deliveryDate: string;
+    setDeliveryDate: (v: string) => void;
 
     remarks: string;
     setRemarks: (v: string) => void;
@@ -36,123 +39,91 @@ interface Props {
 }
 
 const SO_SOURCES = [
-    {
-        label: "Existing Client",
-        description: "Clients with active accounts or previous transactions.",
-    },
-    {
-        label: "CSR Inquiry",
-        description: "Customer Service Representative inquiries.",
-    },
-    {
-        label: "Government",
-        description: "Calls coming from government agencies.",
-    },
-    {
-        label: "Philgeps Website",
-        description: "Inquiries from Philgeps online platform.",
-    },
-    {
-        label: "Philgeps",
-        description: "Other Philgeps related contacts.",
-    },
-    {
-        label: "Distributor",
-        description: "Calls from product distributors or resellers.",
-    },
-    {
-        label: "Modern Trade",
-        description: "Contacts from retail or modern trade partners.",
-    },
-    {
-        label: "Facebook Marketplace",
-        description: "Leads or inquiries from Facebook Marketplace.",
-    },
-    {
-        label: "Walk-in Showroom",
-        description: "Visitors physically coming to showroom.",
-    },
+    { label: "Existing Client", description: "Clients with active accounts or previous transactions." },
+    { label: "CSR Inquiry", description: "Customer Service Representative inquiries." },
+    { label: "Government", description: "Calls coming from government agencies." },
+    { label: "Philgeps Website", description: "Inquiries from Philgeps online platform." },
+    { label: "Philgeps", description: "Other Philgeps related contacts." },
+    { label: "Distributor", description: "Calls from product distributors or resellers." },
+    { label: "Modern Trade", description: "Contacts from retail or modern trade partners." },
+    { label: "Facebook Marketplace", description: "Leads or inquiries from Facebook Marketplace." },
+    { label: "Walk-in Showroom", description: "Visitors physically coming to showroom." },
 ];
 
-const CALL_TYPES = [
-    {
-        label: "Regular SO",
-        description: "Standard sales order without special conditions.",
-    },
-    {
-        label: "Willing to Wait",
-        description: "Client agrees to wait for product availability or delivery.",
-    },
-    {
-        label: "SPF - Special Project",
-        description: "Sales order related to special projects requiring special handling.",
-    },
-    {
-        label: "SPF - Local",
-        description: "Special project sales order for local clients.",
-    },
-    {
-        label: "SPF - Foreign",
-        description: "Special project sales order for foreign clients.",
-    },
-    {
-        label: "Promo",
-        description: "Sales order under promotional campaigns or discounts.",
-    },
-    {
-        label: "FB Marketplace",
-        description: "Sales orders generated from Facebook Marketplace leads.",
-    },
-    {
-        label: "Internal Order",
-        description: "Orders placed internally within the company.",
-    },
+const PAYMENT_TERMS = [
+  {
+    label: "COD",
+    description: "Customer pays the full amount upon delivery of the items.",
+  },
+  {
+    label: "Check",
+    description: "Payment will be made through dated or current check upon delivery or agreed schedule.",
+  },
+  {
+    label: "Cash",
+    description: "Customer pays in cash either upon order confirmation or delivery.",
+  },
+  {
+    label: "Bank Deposit",
+    description: "Payment is sent via bank transfer or direct deposit to the company account.",
+  },
+  {
+    label: "GCash",
+    description: "Customer pays via GCash wallet transfer prior to or during delivery.",
+  },
+  {
+    label: "Terms",
+    description: "Payment follows an agreed credit term (e.g., 30/45/60 days) after delivery.",
+  },
 ];
 
-export function SOSheet(props: Props) {
+export function DRSheet(props: Props) {
     const {
-        step,
-        setStep,
-        source,
-        setSource,
-        soNumber,
-        setSoNumber,
-        soAmount,
-        setSoAmount,
-        callType,
-        setCallType,
-        remarks,
-        setRemarks,
-        status,
-        setStatus,
+        step, setStep,
+        source, setSource,
+        drNumber, setDrNumber,
+        siAmount, setSiAmount,
+        paymentTerms, setPaymentTerms,
+        deliveryDate, setDeliveryDate,
+        remarks, setRemarks,
+        status, setStatus,
         handleBack,
         handleNext,
         handleSave,
     } = props;
 
-    // Validation helpers
+    // Step Validations
     const isStep2Valid = source.trim() !== "";
-    const isStep3Valid = soNumber.trim() !== "" && soAmount.trim() !== "" && !isNaN(Number(soAmount));
-    const isStep4Valid = callType.trim() !== "";
+    const isStep3Valid =
+        drNumber.trim() !== "" &&
+        siAmount.trim() !== "" &&
+        !isNaN(Number(siAmount));
+
+    const isStep4Valid =
+        paymentTerms.trim() !== "" &&
+        deliveryDate.trim() !== "";
+
     const isStep5Valid = remarks.trim() !== "";
 
-    // Step 3 Next handler with validation
     const handleNextStep3 = () => {
-        if (soNumber.trim() === "") {
-            toast.error("Please enter SO Number.");
+        if (drNumber.trim() === "") {
+            toast.error("Please enter DR Number.");
             return;
         }
-        if (soAmount.trim() === "" || isNaN(Number(soAmount))) {
-            toast.error("Please enter valid SO Amount.");
+        if (siAmount.trim() === "" || isNaN(Number(siAmount))) {
+            toast.error("Please enter valid SI Amount.");
             return;
         }
         handleNext();
     };
 
-    // Step 4 Next handler with validation
     const handleNextStep4 = () => {
-        if (callType.trim() === "") {
-            toast.error("Please select Call Type.");
+        if (paymentTerms.trim() === "") {
+            toast.error("Please select Payment Terms.");
+            return;
+        }
+        if (deliveryDate.trim() === "") {
+            toast.error("Please select Delivery Date.");
             return;
         }
         handleNext();
@@ -160,7 +131,8 @@ export function SOSheet(props: Props) {
 
     return (
         <>
-            {/* STEP 2 — SOURCE */}
+
+            {/* STEP 2 - SOURCE */}
             {step === 2 && (
                 <div>
                     <FieldGroup>
@@ -194,37 +166,37 @@ export function SOSheet(props: Props) {
                 </div>
             )}
 
-            {/* STEP 3 — SO NUMBER & AMOUNT */}
+            {/* STEP 3 - DR Number & SI Amount */}
             {step === 3 && (
                 <div>
                     <FieldGroup>
+                        {/* DR Number */}
                         <FieldSet>
-                            <FieldLabel>SO Number</FieldLabel>
+                            <FieldLabel>DR Number</FieldLabel>
                             <Input
                                 type="text"
-                                value={soNumber}
-                                onChange={(e) => setSoNumber(e.target.value)}
-                                placeholder="Enter SO Number"
+                                value={drNumber}
+                                onChange={(e) => setDrNumber(e.target.value)}
+                                placeholder="Enter DR Number"
                             />
                         </FieldSet>
 
+                        {/* SI Amount */}
                         <FieldSet className="mt-3">
-                            <FieldLabel>SO Amount</FieldLabel>
+                            <FieldLabel>SI (Actual Sales)</FieldLabel>
                             <Input
                                 type="number"
-                                step="0.01"
                                 min={0}
-                                value={soAmount}
-                                onChange={(e) => setSoAmount(e.target.value)}
-                                placeholder="Enter SO Amount"
+                                step="0.01"
+                                value={siAmount}
+                                onChange={(e) => setSiAmount(e.target.value)}
+                                placeholder="Enter SI Amount"
                             />
                         </FieldSet>
                     </FieldGroup>
 
                     <div className="flex justify-between mt-4">
-                        <Button variant="outline" onClick={handleBack}>
-                            Back
-                        </Button>
+                        <Button variant="outline" onClick={handleBack}>Back</Button>
                         <Button onClick={handleNextStep3} disabled={!isStep3Valid}>
                             Next
                         </Button>
@@ -232,14 +204,18 @@ export function SOSheet(props: Props) {
                 </div>
             )}
 
-            {/* STEP 4 — CALL TYPE */}
+            {/* STEP 4 - PAYMENT TERMS + DELIVERY DATE */}
             {step === 4 && (
                 <div>
                     <FieldGroup>
+                        {/* PAYMENT TERMS */}
                         <FieldSet>
-                            <FieldLabel>Call Type</FieldLabel>
-                            <RadioGroup value={callType} onValueChange={setCallType}>
-                                {CALL_TYPES.map(({ label, description }) => (
+                            <FieldLabel>Payment Terms</FieldLabel>
+                            <RadioGroup
+                                value={paymentTerms}
+                                onValueChange={setPaymentTerms}
+                            >
+                                {PAYMENT_TERMS.map(({ label, description }) => (
                                     <FieldLabel key={label}>
                                         <Field orientation="horizontal">
                                             <FieldContent>
@@ -250,15 +226,25 @@ export function SOSheet(props: Props) {
                                         </Field>
                                     </FieldLabel>
                                 ))}
-
                             </RadioGroup>
+                        </FieldSet>
+
+                        {/* DELIVERY DATE */}
+                        <FieldSet className="mt-4">
+                            <FieldLabel>Delivery Date</FieldLabel>
+                            <Input
+                                type="date"
+                                value={deliveryDate}
+                                onChange={(e) => setDeliveryDate(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Select the actual date of delivery.
+                            </p>
                         </FieldSet>
                     </FieldGroup>
 
                     <div className="flex justify-between mt-4">
-                        <Button variant="outline" onClick={handleBack}>
-                            Back
-                        </Button>
+                        <Button variant="outline" onClick={handleBack}>Back</Button>
                         <Button onClick={handleNextStep4} disabled={!isStep4Valid}>
                             Next
                         </Button>
@@ -283,19 +269,16 @@ export function SOSheet(props: Props) {
                     <FieldGroup>
                         <FieldSet>
                             <FieldLabel>Status</FieldLabel>
-                            <RadioGroup
-                                value={status}
-                                onValueChange={setStatus}
-                            >
+                            <RadioGroup value={status} onValueChange={setStatus}>
                                 <FieldLabel>
                                     <Field orientation="horizontal">
                                         <FieldContent>
-                                            <FieldTitle>SO-Done</FieldTitle>
+                                            <FieldTitle>Delivered</FieldTitle>
                                             <FieldDescription>
-                                                Sales Order process is complete.
+                                                All fields completed (DR, SI, Payment Terms & Delivery Date)
                                             </FieldDescription>
                                         </FieldContent>
-                                        <RadioGroupItem value="SO-Done" />
+                                        <RadioGroupItem value="Delivered" />
                                     </Field>
                                 </FieldLabel>
                             </RadioGroup>

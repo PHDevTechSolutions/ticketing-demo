@@ -1,18 +1,8 @@
 "use client";
 
 import React, { useEffect } from "react";
-import {
-    Button,
-} from "@/components/ui/button";
-import {
-    Field,
-    FieldContent,
-    FieldLabel,
-    FieldSet,
-    FieldGroup,
-    FieldTitle,
-    FieldDescription,
-} from "@/components/ui/field";
+import { Button, } from "@/components/ui/button";
+import { Field, FieldContent, FieldLabel, FieldSet, FieldGroup, FieldTitle, FieldDescription, } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -108,6 +98,7 @@ interface InboundSheetProps {
     setStatus: (value: string) => void;
     handleBack: () => void;
     handleNext: () => void;
+    handleSave: () => void;
 }
 
 export function InboundSheet({
@@ -123,6 +114,7 @@ export function InboundSheet({
     setStatus,
     handleBack,
     handleNext,
+    handleSave,
 }: InboundSheetProps) {
     // If status empty, default to "Assisted"
     useEffect(() => {
@@ -239,6 +231,7 @@ export function InboundSheet({
                     </FieldGroup>
                     <div className="flex justify-between mt-4">
                         <Button variant="outline" onClick={handleBack}>Back</Button>
+                        <Button onClick={handleSave}>Save</Button>
                     </div>
                 </>
             )}

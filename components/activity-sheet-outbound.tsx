@@ -26,6 +26,7 @@ interface OutboundSheetProps {
 
     handleBack: () => void;
     handleNext: () => void;
+    handleSave: () => void;
 
 }
 
@@ -41,6 +42,7 @@ export function OutboundSheet({
     loading,
     handleBack,
     handleNext,
+    handleSave,
 
 }: OutboundSheetProps) {
     return (
@@ -313,6 +315,7 @@ export function OutboundSheet({
                     <h2 className="text-sm font-semibold mb-3 mt-3">Step 5 — Remarks & Status</h2>
                     <div className="flex justify-between mt-4">
                         <Button variant="outline" onClick={handleBack}>Back</Button>
+                        <Button onClick={handleSave}>Save</Button>
                     </div>
                 </div>
             )}

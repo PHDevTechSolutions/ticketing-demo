@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-  FieldTitle,
-} from "@/components/ui/field";
+import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel, FieldSet, FieldTitle, } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +44,7 @@ interface Props {
 
   handleBack: () => void;
   handleNext: () => void;
+  handleSave: () => void;
 }
 
 const Quotation_SOURCES = [
@@ -119,6 +112,7 @@ export function QuotationSheet(props: Props) {
     setStatus,
     handleBack,
     handleNext,
+    handleSave,
   } = props;
 
   const [quotationNumberError, setQuotationNumberError] = useState("");
@@ -372,9 +366,8 @@ export function QuotationSheet(props: Props) {
           </FieldGroup>
 
           <div className="flex justify-between mt-4">
-            <Button variant="outline" onClick={handleBack}>
-              Back
-            </Button>
+            <Button variant="outline" onClick={handleBack}>Back</Button>
+            <Button onClick={handleSave}>Save</Button>
           </div>
         </div>
       )}
