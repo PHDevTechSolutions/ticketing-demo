@@ -7,8 +7,11 @@ import {
   collection,
   query,
   orderBy,
+  where,
   Timestamp,
   onSnapshot,
+  QuerySnapshot,
+  DocumentData,
 } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +24,10 @@ interface EventItem {
   time?: string; // "hh:mm AM/PM" format, optional
   title: string;
   description: string;
+}
+
+interface SimpleCalendarProps {
+  referenceid: string;
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -74,24 +81,23 @@ function eventsByHour(events: EventItem[]) {
   return map;
 }
 
-export function SimpleCalendar() {
+export function SimpleCalendar({ referenceid }: SimpleCalendarProps) {
   const now = React.useMemo(() => new Date(), []);
   const [currentYear, setCurrentYear] = React.useState(now.getFullYear());
   const [currentMonth, setCurrentMonth] = React.useState(now.getMonth());
-  // Set default selected date as today
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(now);
 
   const [events, setEvents] = React.useState<EventItem[]>([]);
 
-  React.useEffect(() => {
-    function processSnapshot(
-      snapshot: any,
+  const processSnapshot = React.useCallback(
+    (
+      snapshot: QuerySnapshot<DocumentData>,
       dateField: string,
       titleField: string,
       descriptionField: string
-    ) {
+    ) => {
       const items: EventItem[] = [];
-      snapshot.forEach((doc: any) => {
+      snapshot.forEach((doc) => {
         const data = doc.data();
         let dateStr = "";
         let timeStr: string | undefined = undefined;
@@ -101,10 +107,7 @@ export function SimpleCalendar() {
           const dateObj = dateValue.toDate();
           dateStr = formatDateLocal(dateObj);
           timeStr = formatTime(dateObj);
-        } else if (
-          typeof dateValue === "string" ||
-          typeof dateValue === "number"
-        ) {
+        } else if (typeof dateValue === "string" || typeof dateValue === "number") {
           const dateObj = new Date(dateValue);
           if (!isNaN(dateObj.getTime())) {
             dateStr = formatDateLocal(dateObj);
@@ -121,44 +124,45 @@ export function SimpleCalendar() {
         });
       });
       return items;
+    },
+    []
+  );
+
+  React.useEffect(() => {
+    if (!referenceid) {
+      setEvents([]);
+      return;
     }
 
     const unsubscribes: (() => void)[] = [];
 
-    // Meetings listener
-    const meetingQuery = query(collection(db, "meetings"), orderBy("start_date"));
+    const meetingQuery = query(
+      collection(db, "meetings"),
+      where("referenceid", "==", referenceid),
+      orderBy("start_date")
+    );
     const unsubscribeMeetings = onSnapshot(meetingQuery, (snapshot) => {
-      const meetingEvents = processSnapshot(
-        snapshot,
-        "start_date",
-        "type_activity",
-        "remarks"
-      );
+      const meetingEvents = processSnapshot(snapshot, "start_date", "type_activity", "remarks");
+
       setEvents((currentEvents) => {
-        const otherEvents = currentEvents.filter(
-          (ev) => !meetingEvents.some((me) => me.id === ev.id)
-        );
+        // Remove existing meeting events (by id)
+        const otherEvents = currentEvents.filter((ev) => !meetingEvents.some((me) => me.id === ev.id));
         return [...otherEvents, ...meetingEvents];
       });
     });
     unsubscribes.push(unsubscribeMeetings);
 
-    // Activity logs listener
     const logQuery = query(
       collection(db, "activity_logs"),
+      where("referenceid", "==", referenceid),
       orderBy("date_created", "desc")
     );
     const unsubscribeLogs = onSnapshot(logQuery, (snapshot) => {
-      const logEvents = processSnapshot(
-        snapshot,
-        "date_created",
-        "status",
-        "details"
-      );
+      const logEvents = processSnapshot(snapshot, "date_created", "status", "details");
+
       setEvents((currentEvents) => {
-        const otherEvents = currentEvents.filter(
-          (ev) => !logEvents.some((le) => le.id === ev.id)
-        );
+        // Remove existing log events (by id)
+        const otherEvents = currentEvents.filter((ev) => !logEvents.some((le) => le.id === ev.id));
         return [...otherEvents, ...logEvents];
       });
     });
@@ -167,9 +171,8 @@ export function SimpleCalendar() {
     return () => {
       unsubscribes.forEach((unsub) => unsub());
     };
-  }, []);
+  }, [referenceid, processSnapshot]);
 
-  // Group events by date string "YYYY-MM-DD"
   const eventsByDate = React.useMemo(() => {
     const map: Record<string, EventItem[]> = {};
     for (const ev of events) {
@@ -207,7 +210,7 @@ export function SimpleCalendar() {
                 setCurrentYear((y) => y - 1);
                 setCurrentMonth(11);
               } else setCurrentMonth((m) => m - 1);
-              setSelectedDate(null); // Reset selection on month change (optional)
+              setSelectedDate(null);
             }}
           >
             Prev
@@ -226,7 +229,7 @@ export function SimpleCalendar() {
                 setCurrentYear((y) => y + 1);
                 setCurrentMonth(0);
               } else setCurrentMonth((m) => m + 1);
-              setSelectedDate(null); // Reset selection on month change (optional)
+              setSelectedDate(null);
             }}
           >
             Next
