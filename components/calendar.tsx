@@ -97,7 +97,7 @@ export function SimpleCalendar() {
     const selectedEvents = selectedDateStr ? eventsByDate[selectedDateStr] || [] : [];
 
     return (
-        <div className="flex flex-col md:flex-row max-w-7xl mx-auto gap-6 p-4 min-h-[700px]">
+        <div className="flex flex-col md:flex-row max-w-7xl mx-auto gap-6 min-h-[700px]">
             {/* Calendar on left */}
             <Card className="flex-shrink-0 w-full md:w-2/3">
                 <CardHeader className="flex justify-between items-center mb-4">
@@ -197,14 +197,7 @@ export function SimpleCalendar() {
             </Card>
 
             {/* Events panel on right */}
-            <Card className="w-full md:w-1/3 p-2 overflow-auto max-h-[700px]">
-                <CardHeader>
-                    <CardTitle className="text-xs font-semibold mb-4">
-                        {selectedDate
-                            ? `Events on ${selectedDateStr}`
-                            : "Select a date"}
-                    </CardTitle>
-                </CardHeader>
+            <Card className="w-full md:w-1/3 gap-2 overflow-auto shadow-none border-0">
 
                 {selectedEvents.length === 0 && selectedDate && (
                     <p className="text-xs text-muted-foreground">
