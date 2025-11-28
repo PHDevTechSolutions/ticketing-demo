@@ -19,6 +19,7 @@ interface Account {
     region: string;
     account_reference_number: string;
     next_available_date?: string | null;
+    status: string;
 }
 
 interface NewTaskProps {
@@ -156,7 +157,9 @@ export const NewTask: React.FC<NewTaskProps> = ({
         for (const cluster of clusterOrder) {
             grouped[cluster] = accounts.filter(
                 (acc) =>
-                    acc.type_client === cluster && dateCondition(normalizeDate(acc.next_available_date))
+                    acc.type_client === cluster &&
+                    dateCondition(normalizeDate(acc.next_available_date)) &&
+                    acc.status.toLowerCase() !== "pending" // exclude Pending status
             );
         }
         return grouped;

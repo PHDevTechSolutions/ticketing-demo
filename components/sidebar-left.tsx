@@ -33,15 +33,14 @@ const data = {
     },
   ],
   navMain: [
-    { title: "Ask AI", url: "#", icon: Bot },
+    //{ title: "Ask AI", url: "#", icon: Bot },
     { title: "Dashboard", url: "#", icon: LayoutDashboard, isActive: true },
-    { title: "Inbox", url: "#", icon: Mail, badge: "5" },
+    //{ title: "Inbox", url: "#", icon: Mail, badge: "5" },
   ],
   navSecondary: [
     { title: "Calendar", url: "/calendar", icon: CalendarDays },
     { title: "Settings", url: "/settings", icon: Settings },
-    { title: "Trash", url: "#", icon: Trash },
-    { title: "Help & Support", url: "#", icon: HelpCircle },
+    //{ title: "Help & Support", url: "#", icon: HelpCircle },
   ],
   favorites: [
     { name: "Sales Performance", url: "#", emoji: "📊" },
@@ -60,9 +59,9 @@ const data = {
         { name: "Deletion", url: "/companies/remove", emoji: "🗑️" },
         { name: "Follow Ups", url: "/companies/followup", emoji: "🔁" },
         { name: "Group Affiliate", url: "/companies/group", emoji: "👥" },
-        { name: "Pending Accounts", url: "/companies/pending", emoji: "🔁" }, // For TSM and Manager
-        { name: "Pending Transferred", url: "/companies/transfer", emoji: "🔁" }, // For TSM and Manager
-        { name: "Account Deletion", url: "/companies/approval", emoji: "🗑️" }, // For TSM and Manager
+        //{ name: "Pending Accounts", url: "/companies/pending", emoji: "🔁" }, // For TSM and Manager
+        //{ name: "Pending Transferred", url: "/companies/transfer", emoji: "🔁" }, // For TSM and Manager Subject for Deletion Codes
+        { name: "Account Deletion", url: "/companies/approval", emoji: "🗑️" }, // For TSM and Manager Subject for Deletion Codes
       ],
     },
     {
@@ -262,7 +261,6 @@ export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) 
       return workspace;
     });
   }, [userDetails.Role]);
-
 
   // Append userId to URLs in filtered workspaces
   const workspacesWithId = React.useMemo(

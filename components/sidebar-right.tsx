@@ -3,14 +3,8 @@
 import * as React from "react";
 import { DatePicker } from "@/components/date-picker";
 import { NavUser } from "@/components/nav-user";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarSeparator,
-} from "@/components/ui/sidebar";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";  // <-- import card components
+import { Sidebar, SidebarContent,  SidebarFooter, SidebarHeader, SidebarSeparator, } from "@/components/ui/sidebar";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { useFormat } from "@/contexts/FormatContext";
 import { type DateRange } from "react-day-picker";
 
@@ -39,6 +33,7 @@ export function SidebarRight({
     Firstname: "",
     Lastname: "",
     Position: "",
+    Email: "",
     profilePicture: "",
   });
 
@@ -88,6 +83,7 @@ export function SidebarRight({
           Firstname: data.Firstname || "",
           Lastname: data.Lastname || "",
           Position: data.Position || "",
+          Email: data.Email || "",
           profilePicture: data.profilePicture || "",
         });
       })
@@ -110,6 +106,7 @@ export function SidebarRight({
             user={{
               name: `${userDetails.Firstname} ${userDetails.Lastname}`.trim() || "Unknown User",
               position: userDetails.Position,
+              email: userDetails.Email,
               avatar: userDetails.profilePicture || "/avatars/shadcn.jpg",
             }}
             userId={userId}
@@ -119,6 +116,7 @@ export function SidebarRight({
             user={{
               name: `${userDetails.Firstname} ${userDetails.Lastname}`.trim() || "Unknown User",
               position: userDetails.Position,
+              email: userDetails.Email,
               avatar: userDetails.profilePicture || "/avatars/shadcn.jpg",
             }}
             userId={userId ?? ""}

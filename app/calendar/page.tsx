@@ -8,13 +8,7 @@ import { FormatProvider } from "@/contexts/FormatContext";
 import { SidebarLeft } from "@/components/sidebar-left";
 import { SidebarRight } from "@/components/sidebar-right";
 
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, } from "@/components/ui/breadcrumb";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { AlertCircleIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,11 +40,12 @@ interface Account {
 }
 
 interface UserDetails {
-  userid: string;
+  userId: string;
   referenceid: string;
   tsm: string;
   manager: string;
   target_quota: string;
+  email: string;
 }
 
 function DashboardContent() {
@@ -60,11 +55,12 @@ function DashboardContent() {
 
   const { userId, setUserId } = useUser();
   const [userDetails, setUserDetails] = useState<UserDetails>({
-    userid: "",
+    userId: "",
     referenceid: "",
     tsm: "",
     manager: "",
     target_quota: "",
+    email: "",
   });
 
   const [posts, setPosts] = useState<Account[]>([]);
@@ -73,8 +69,6 @@ function DashboardContent() {
   const [error, setError] = useState<string | null>(null);
   const [dateCreatedFilterRange, setDateCreatedFilterRangeAction] =
     useState<DateRange | undefined>(undefined);
-
-  const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
     if (queryUserId && queryUserId !== userId) {
@@ -99,10 +93,11 @@ function DashboardContent() {
         const data = await response.json();
 
         setUserDetails({
-          userid: data._id,
+          userId: data.userId || "",
           referenceid: data.ReferenceID || "",
           tsm: data.TSM || "",
           manager: data.Manager || "",
+          email: data.Email || "",
           target_quota: data.TargetQuota || "",
         });
 
@@ -179,7 +174,11 @@ function DashboardContent() {
               )}
 
               <div>
-                <SimpleCalendar userId={userDetails.userid} referenceid={userDetails.referenceid} />
+                <SimpleCalendar
+                  userId={userDetails.userId}
+                  referenceid={userDetails.referenceid}
+                  email={userDetails.email}
+                />
               </div>
             </>
           )}

@@ -32,7 +32,7 @@ interface MeetingItem {
   manager: string;
   type_activity: string;
   remarks: string;
-  start_date: string;
+  start_date: string; // stored as ISO string or similar
   end_date: string;
   date_created: Timestamp;
   date_updated: Timestamp;
@@ -44,11 +44,37 @@ interface MeetingProps {
   manager: string;
 }
 
+// Helper to format date string to "November 23 2025 / 8:00 AM"
+function formatDateTime(dateStr: string) {
+  // Convert string to Date object
+  const dateObj = new Date(dateStr);
+  if (isNaN(dateObj.getTime())) return dateStr; // fallback if invalid
+
+  // Options for date part
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+
+  const datePart = dateObj.toLocaleDateString("en-US", options);
+
+  // Format time with AM/PM
+  let hours = dateObj.getHours();
+  const minutes = dateObj.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+
+  const timePart = `${hours}:${minutes} ${ampm}`;
+
+  return `${datePart} / ${timePart}`;
+}
+
 export function Meeting({ referenceid, tsm, manager }: MeetingProps) {
   const [meetings, setMeetings] = useState<MeetingItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch meetings filtered by referenceid prop
   useEffect(() => {
     async function fetchMeetings() {
       setLoading(true);
@@ -58,25 +84,25 @@ export function Meeting({ referenceid, tsm, manager }: MeetingProps) {
           where("referenceid", "==", referenceid),
           orderBy("date_created", "desc")
         );
+
         const querySnapshot = await getDocs(q);
 
         const fetchedMeetings = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
             id: doc.id,
-            referenceid: data.referenceid,
-            tsm: data.tsm,
-            manager: data.manager,
-            type_activity: data.type_activity,
-            remarks: data.remarks,
-            start_date: data.start_date,
-            end_date: data.end_date,
-            date_created: data.date_created,
-            date_updated: data.date_updated,
-          };
+            ...data,
+          } as MeetingItem;
         });
 
-        setMeetings(fetchedMeetings);
+        // FILTER — only upcoming or ongoing
+        const today = new Date().toISOString().split("T")[0];
+
+        const upcomingMeetings = fetchedMeetings.filter(
+          (m) => m.end_date >= today
+        );
+
+        setMeetings(upcomingMeetings);
       } catch (error) {
         console.error("Error loading meetings:", error);
         toast.error("Failed to load meetings.");
@@ -87,7 +113,6 @@ export function Meeting({ referenceid, tsm, manager }: MeetingProps) {
     fetchMeetings();
   }, [referenceid]);
 
-  // Delete meeting handler
   const handleDeleteMeeting = async (id: string) => {
     if (!confirm("Are you sure you want to delete this meeting?")) return;
 
@@ -101,17 +126,19 @@ export function Meeting({ referenceid, tsm, manager }: MeetingProps) {
     }
   };
 
-  // Handler after new meeting created in MeetingDialog
   const handleMeetingCreated = (newMeeting: MeetingItem) => {
-    setMeetings((prev) => [newMeeting, ...prev]);
+    const today = new Date().toISOString().split("T")[0];
+
+    // add only if upcoming
+    if (newMeeting.end_date >= today) {
+      setMeetings((prev) => [newMeeting, ...prev]);
+    }
   };
 
-  // Limit meetings to max 3 for display
   const displayedMeetings = meetings.slice(0, 3);
 
   return (
     <div>
-      {/* Header with title and create button */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold">Meeting</h2>
         <MeetingDialog
@@ -129,41 +156,36 @@ export function Meeting({ referenceid, tsm, manager }: MeetingProps) {
 
       <Separator className="my-4" />
 
-      {/* Meetings Accordion List */}
       <Accordion type="single" collapsible className="w-full">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading meetings...</p>
         ) : displayedMeetings.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No meetings scheduled.</p>
+          <p className="text-sm text-muted-foreground">
+            No upcoming meetings.
+          </p>
         ) : (
           displayedMeetings.map(
-            ({
-              id,
-              type_activity,
-              remarks,
-              start_date,
-              end_date,
-            }) => (
+            ({ id, type_activity, remarks, start_date, end_date }) => (
               <AccordionItem key={id} value={id}>
                 <AccordionTrigger className="text-[10px]">
-                  {type_activity} — {start_date} to {end_date}
+                  {type_activity} — {formatDateTime(start_date)} to{" "}
+                  {formatDateTime(end_date)}
                 </AccordionTrigger>
                 <AccordionContent className="flex flex-col gap-2">
                   <p className="text-[10px]">
                     <strong>Remarks:</strong> {remarks}
                   </p>
                   <p className="text-[10px]">
-                    <strong>Start Date:</strong> {start_date}
+                    <strong>Start Date:</strong> {formatDateTime(start_date)}
                   </p>
                   <p className="text-[10px]">
-                    <strong>End Date:</strong> {end_date}
+                    <strong>End Date:</strong> {formatDateTime(end_date)}
                   </p>
                   <div className="mt-2">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteMeeting(id)}
-                      aria-label="Delete meeting"
                       className="text-red-600 hover:text-red-800"
                     >
                       <Trash2 size={16} />

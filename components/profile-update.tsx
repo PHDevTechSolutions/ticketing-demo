@@ -215,10 +215,10 @@ export default function ProfileClient() {
       setUserDetails((prev) =>
         prev
           ? {
-              ...prev,
-              Password: "",
-              ContactPassword: "",
-            }
+            ...prev,
+            Password: "",
+            ContactPassword: "",
+          }
           : prev
       );
       setPasswordStrength("");
@@ -357,7 +357,7 @@ export default function ProfileClient() {
                             value={userDetails.Email}
                             onChange={handleChange}
                             autoComplete="email"
-                            required
+                            disabled
                           />
                         </div>
 
@@ -374,74 +374,104 @@ export default function ProfileClient() {
                         </div>
                       </fieldset>
 
-                      <div className="flex flex-col space-y-2 relative">
-                        <Label htmlFor="Password">Password</Label>
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          id="Password"
-                          name="Password"
-                          value={userDetails.Password || ""}
-                          onChange={handleChange}
-                          maxLength={10}
-                          autoComplete="new-password"
-                        />
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? "Hide" : "Show"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleGeneratePassword}
-                          >
-                            Generate
-                          </Button>
-                        </div>
-                        {passwordStrength && (
-                          <p
-                            className={`text-sm ${
-                              passwordStrength === "strong"
+                      <fieldset className="flex flex-col md:flex-row border border-gray-300 rounded-md p-4">
+                        <legend className="text-sm font-semibold px-2 mb-4 md:mb-0 md:mr-8 self-start">
+                          Password Credentials
+                        </legend>
+
+                        <div className="flex flex-col flex-1 space-y-4">
+                          {/* Password row */}
+                          <div className="flex items-center space-x-4">
+                            {/* Label */}
+                            <Label
+                              htmlFor="Password"
+                              className="flex-shrink-0 w-24"
+                            >
+                              Password
+                            </Label>
+
+                            {/* Input */}
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              id="Password"
+                              name="Password"
+                              value={userDetails.Password || ""}
+                              onChange={handleChange}
+                              maxLength={10}
+                              autoComplete="new-password"
+                              className="flex-1"
+                            />
+
+                            {/* Buttons */}
+                            <div className="flex space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? "Hide" : "Show"}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleGeneratePassword}
+                              >
+                                Generate
+                              </Button>
+                            </div>
+                          </div>
+
+
+                          {/* Password strength message */}
+                          {passwordStrength && (
+                            <p
+                              className={`text-sm ${passwordStrength === "strong"
                                 ? "text-green-600"
                                 : passwordStrength === "medium"
-                                ? "text-yellow-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            Password strength: {passwordStrength}
-                          </p>
-                        )}
-                      </div>
+                                  ? "text-yellow-600"
+                                  : "text-red-600"
+                                }`}
+                            >
+                              Password strength: {passwordStrength}
+                            </p>
+                          )}
 
-                      <div className="flex flex-col space-y-2 relative">
-                        <Label htmlFor="ContactPassword">Confirm Password</Label>
-                        <Input
-                          type={showConfirmPassword ? "text" : "password"}
-                          id="ContactPassword"
-                          name="ContactPassword"
-                          value={userDetails.ContactPassword || ""}
-                          onChange={handleChange}
-                          maxLength={10}
-                          autoComplete="new-password"
-                        />
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
-                          >
-                            {showConfirmPassword ? "Hide" : "Show"}
-                          </Button>
+                          {/* Confirm Password row */}
+                          <div className="flex items-center space-x-4">
+                            {/* Label */}
+                            <Label
+                              htmlFor="ContactPassword"
+                              className="flex-shrink-0 w-24"
+                            >
+                              Confirm Password
+                            </Label>
+
+                            {/* Input */}
+                            <Input
+                              type={showConfirmPassword ? "text" : "password"}
+                              id="ContactPassword"
+                              name="ContactPassword"
+                              value={userDetails.ContactPassword || ""}
+                              onChange={handleChange}
+                              maxLength={10}
+                              autoComplete="new-password"
+                              className="flex-1"
+                            />
+
+                            {/* Button */}
+                            <div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              >
+                                {showConfirmPassword ? "Hide" : "Show"}
+                              </Button>
+                            </div>
+                          </div>
+
                         </div>
-                      </div>
+                      </fieldset>
 
                       <Button
                         type="submit"
@@ -451,8 +481,8 @@ export default function ProfileClient() {
                         {saving
                           ? "Saving..."
                           : uploading
-                          ? "Uploading..."
-                          : "Save Changes"}
+                            ? "Uploading..."
+                            : "Save Changes"}
                       </Button>
                     </form>
                   </div>

@@ -58,7 +58,8 @@ function toDate(date: Timestamp | Date | string | number): Date {
   return new Date(date as any);
 }
 
-const LOCAL_STORAGE_KEY = "dismissedMeetings";
+const LOCAL_STORAGE_MEETINGS_KEY = "dismissedMeetings";
+const LOCAL_STORAGE_LOGOUT_KEY = "dismissedLogoutReminders";
 
 function getTodayKey() {
   const now = new Date();
@@ -68,7 +69,7 @@ function getTodayKey() {
 function getDismissedMeetingsFromStorage(): { [date: string]: string[] } {
   if (typeof window === "undefined") return {};
   try {
-    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const stored = localStorage.getItem(LOCAL_STORAGE_MEETINGS_KEY);
     return stored ? JSON.parse(stored) : {};
   } catch {
     return {};
@@ -78,7 +79,24 @@ function getDismissedMeetingsFromStorage(): { [date: string]: string[] } {
 function saveDismissedMeetingsToStorage(data: { [date: string]: string[] }) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(LOCAL_STORAGE_MEETINGS_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+function getDismissedLogoutFromStorage(): { [date: string]: boolean } {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = localStorage.getItem(LOCAL_STORAGE_LOGOUT_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDismissedLogoutToStorage(data: { [date: string]: boolean }) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_LOGOUT_KEY, JSON.stringify(data));
   } catch {}
 }
 
@@ -91,13 +109,18 @@ export function Reminders() {
 
   const [showLogoutReminder, setShowLogoutReminder] = useState(false);
 
-  // Load dismissed meetings from localStorage
+  // Dismissed meetings for today
   const [dismissedMeetings, setDismissedMeetings] = useState<string[]>([]);
+  // Dismissed logout reminder today
+  const [dismissedLogoutToday, setDismissedLogoutToday] = useState(false);
 
   useEffect(() => {
     const dismissedData = getDismissedMeetingsFromStorage();
     const todayKey = getTodayKey();
     setDismissedMeetings(dismissedData[todayKey] || []);
+
+    const dismissedLogoutData = getDismissedLogoutFromStorage();
+    setDismissedLogoutToday(!!dismissedLogoutData[todayKey]);
   }, []);
 
   useEffect(() => {
@@ -150,9 +173,14 @@ export function Reminders() {
       setCurrentMeeting(null);
     }
 
+    // Show logout reminder only if not dismissed today
+    const todayKey = getTodayKey();
+    const dismissedLogoutData = getDismissedLogoutFromStorage();
+
     if (
       now.getHours() === 16 &&
       now.getMinutes() === 30 &&
+      !dismissedLogoutData[todayKey] &&
       !showLogoutReminder
     ) {
       setShowLogoutReminder(true);
@@ -174,6 +202,15 @@ export function Reminders() {
 
     setShowMeetingReminder(false);
     setCurrentMeeting(null);
+  }
+
+  function dismissLogoutReminder() {
+    const todayKey = getTodayKey();
+    const dismissedLogoutData = getDismissedLogoutFromStorage();
+    dismissedLogoutData[todayKey] = true;
+    saveDismissedLogoutToStorage(dismissedLogoutData);
+    setDismissedLogoutToday(true);
+    setShowLogoutReminder(false);
   }
 
   return (
@@ -211,7 +248,7 @@ export function Reminders() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={() => setShowLogoutReminder(false)}>Okay</Button>
+            <Button onClick={dismissLogoutReminder}>Dismiss</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

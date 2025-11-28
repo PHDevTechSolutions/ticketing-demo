@@ -29,8 +29,8 @@ interface EventItem {
 interface SimpleCalendarProps {
   referenceid: string;
   userId: string;
+  email: string;
 }
-
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -83,7 +83,7 @@ function eventsByHour(events: EventItem[]) {
   return map;
 }
 
-export function SimpleCalendar({ referenceid, userId }: SimpleCalendarProps) {
+export function SimpleCalendar({ referenceid, userId, email }: SimpleCalendarProps) {
   const now = React.useMemo(() => new Date(), []);
   const [currentYear, setCurrentYear] = React.useState(now.getFullYear());
   const [currentMonth, setCurrentMonth] = React.useState(now.getMonth());
@@ -131,50 +131,91 @@ export function SimpleCalendar({ referenceid, userId }: SimpleCalendarProps) {
   );
 
   React.useEffect(() => {
-    if (!referenceid) {
+    if (!referenceid && !email) {
       setEvents([]);
       return;
     }
 
     const unsubscribes: (() => void)[] = [];
 
-    const meetingQuery = query(
-      collection(db, "meetings"),
-      where("userId", "==", userId),
-      orderBy("start_date")
-    );
-    const unsubscribeMeetings = onSnapshot(meetingQuery, (snapshot) => {
-      const meetingEvents = processSnapshot(snapshot, "start_date", "type_activity", "remarks");
+    // Meetings query
+    if (referenceid) {
+      const meetingQuery = query(
+        collection(db, "meetings"),
+        where("referenceid", "==", referenceid),
+        orderBy("start_date", "desc")
+      );
 
-      setEvents((currentEvents) => {
-        // Remove existing meeting events (by id)
-        const otherEvents = currentEvents.filter((ev) => !meetingEvents.some((me) => me.id === ev.id));
-        return [...otherEvents, ...meetingEvents];
+      const unsubscribeMeetings = onSnapshot(meetingQuery, (snapshot) => {
+        const meetingEvents = processSnapshot(snapshot, "start_date", "type_activity", "remarks");
+
+        setEvents((prevEvents) => {
+          // Keep previous login/logout events
+          const otherEvents = prevEvents.filter(
+            (ev) => ev.title.toLowerCase() === "login" || ev.title.toLowerCase() === "logout"
+          );
+          return [...meetingEvents, ...otherEvents].sort((a, b) => {
+            if (a.date > b.date) return -1;
+            if (a.date < b.date) return 1;
+            if (a.time && b.time) {
+              if (a.time > b.time) return -1;
+              if (a.time < b.time) return 1;
+            }
+            return 0;
+          });
+        });
       });
-    });
-    unsubscribes.push(unsubscribeMeetings);
 
-    const logQuery = query(
-      collection(db, "activity_logs"),
-      where("referenceid", "==", referenceid),
-      orderBy("date_created", "desc")
-    );
-    const unsubscribeLogs = onSnapshot(logQuery, (snapshot) => {
-      const logEvents = processSnapshot(snapshot, "date_created", "status", "details");
+      unsubscribes.push(unsubscribeMeetings);
+    }
 
-      setEvents((currentEvents) => {
-        // Remove existing log events (by id)
-        const otherEvents = currentEvents.filter((ev) => !logEvents.some((le) => le.id === ev.id));
-        return [...otherEvents, ...logEvents];
+    // Activity logs query
+    if (email) {
+      const activityLogsQuery = query(
+        collection(db, "activity_logs"),
+        where("email", "==", email),
+        orderBy("date_created", "desc")
+      );
+
+      const unsubscribeActivityLogs = onSnapshot(activityLogsQuery, (snapshot) => {
+        console.log("activity_logs docs:", snapshot.docs.map((doc) => doc.data()));
+
+        const allActivityEvents = processSnapshot(snapshot, "date_created", "status", "remarks");
+        console.log("allActivityEvents:", allActivityEvents);
+
+        // Case-insensitive filter for login/logout
+        const activityEvents = allActivityEvents.filter((ev) =>
+          ["login", "logout"].includes(ev.title.toLowerCase())
+        );
+
+        console.log("Filtered login/logout events:", activityEvents);
+
+        setEvents((prevEvents) => {
+          // Keep previous non-login/logout events (e.g., meetings)
+          const otherEvents = prevEvents.filter(
+            (ev) => ev.title.toLowerCase() !== "login" && ev.title.toLowerCase() !== "logout"
+          );
+          return [...otherEvents, ...activityEvents].sort((a, b) => {
+            if (a.date > b.date) return -1;
+            if (a.date < b.date) return 1;
+            if (a.time && b.time) {
+              if (a.time > b.time) return -1;
+              if (a.time < b.time) return 1;
+            }
+            return 0;
+          });
+        });
       });
-    });
-    unsubscribes.push(unsubscribeLogs);
+
+      unsubscribes.push(unsubscribeActivityLogs);
+    }
 
     return () => {
       unsubscribes.forEach((unsub) => unsub());
     };
-  }, [referenceid, processSnapshot]);
+  }, [referenceid, email, processSnapshot]);
 
+  // Organize events by date string
   const eventsByDate = React.useMemo(() => {
     const map: Record<string, EventItem[]> = {};
     for (const ev of events) {
@@ -306,9 +347,7 @@ export function SimpleCalendar({ referenceid, userId }: SimpleCalendarProps) {
                     className="flex border-b border-gray-200 min-h-[3rem] items-start gap-2 px-2"
                   >
                     {/* Hour label */}
-                    <div className="w-12 text-xs text-gray-500 select-none">
-                      {formatHour(hour)}
-                    </div>
+                    <div className="w-12 text-xs text-gray-500 select-none">{formatHour(hour)}</div>
 
                     {/* Events in this hour */}
                     <div className="flex-1 space-y-1 p-2">
@@ -324,9 +363,7 @@ export function SimpleCalendar({ referenceid, userId }: SimpleCalendarProps) {
                           <p className="font-semibold text-xs capitalize">
                             {ev.time} - {ev.title}
                           </p>
-                          {ev.description && (
-                            <p className="text-xs text-muted-foreground">{ev.description}</p>
-                          )}
+                          {ev.description && <p className="text-xs text-muted-foreground">{ev.description}</p>}
                         </div>
                       ))}
                     </div>
