@@ -2,6 +2,9 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent, } from "@/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle, } from "@/components/ui/alert"
+import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/utils/supabase";
@@ -335,19 +338,37 @@ export const Manual: React.FC<ManualProps> = ({
     };
 
     if (isLoading) {
-        return <div className="text-center text-muted-foreground">Loading data...</div>;
-    }
-
-    if (error) {
         return (
-            <div className="mb-2 p-2 bg-yellow-100 text-yellow-800 rounded border border-yellow-300">
-                {error}
+            <div className="flex justify-center items-center h-40">
+                <Spinner className="size-8" />
             </div>
         );
     }
 
-    if (mergedData.length === 0) {
-        return <div className="text-muted-foreground">No activities found.</div>;
+    if (error) {
+        return (
+            <Alert variant="destructive" className="flex flex-col space-y-4 p-4 text-xs">
+                <div className="flex items-center space-x-3">
+                    <AlertCircleIcon className="h-6 w-6 text-red-600" />
+                    <div>
+                        <AlertTitle>No Data Found or No Network Connection</AlertTitle>
+                        <AlertDescription className="text-xs">
+                            Please check your internet connection or try again later.
+                        </AlertDescription>
+                    </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                    <CheckCircle2Icon className="h-6 w-6 text-green-600" />
+                    <div>
+                        <AlertTitle className="text-black">Create New Data</AlertTitle>
+                        <AlertDescription className="text-xs">
+                            You can start by adding new entries to populate your database.
+                        </AlertDescription>
+                    </div>
+                </div>
+            </Alert>
+        );
     }
 
     return (

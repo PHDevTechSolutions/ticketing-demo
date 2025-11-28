@@ -132,7 +132,7 @@ export function SidebarRight({
 
         <SidebarSeparator className="mx-0" />
 
-        <Card className="rounded-xs shadow-none border-0 bg-gray-50">
+        <Card className="rounded-xs shadow-none border-0">
           <CardContent>
             <Meeting
               referenceid={userDetails.ReferenceID}
@@ -144,7 +144,7 @@ export function SidebarRight({
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="border-t border-sidebar-border mt-2 pt-2 text-center text-xs text-muted-foreground">
+        <div className="border-t border-sidebar-border mt-2 pt-2 text-center text-xs">
           <div>{time}</div>
           <div className="text-[11px]">{date}</div>
         </div>

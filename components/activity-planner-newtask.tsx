@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { CheckCircle2Icon } from "lucide-react";
+import { CheckCircle2Icon, AlertCircleIcon } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -182,7 +183,13 @@ export const NewTask: React.FC<NewTaskProps> = ({
                 const response = await fetch(
                     `/api/com-fetch-account?referenceid=${encodeURIComponent(referenceid)}`
                 );
-                if (!response.ok) throw new Error("Failed to fetch accounts");
+                if (!response.ok) {
+                    // Instead of throw, set error and return early
+                    setError("Failed to fetch accounts");
+                    onEmptyStatusChange?.(true);
+                    setLoading(false);
+                    return;
+                }
 
                 const data = await response.json();
                 setAccounts(data.data || []);
@@ -196,25 +203,42 @@ export const NewTask: React.FC<NewTaskProps> = ({
             }
         };
 
+
         fetchAccounts();
     }, [referenceid, onEmptyStatusChange]);
 
     if (loading) {
         return (
-            <div className="text-center text-muted-foreground">Loading accounts...</div>
+            <div className="flex justify-center items-center h-40">
+                <Spinner className="size-8" />
+            </div>
         );
     }
 
     if (error) {
         return (
-            <div className="mb-2 p-2 bg-yellow-100 text-yellow-800 rounded border border-yellow-300">
-                {error}
-            </div>
-        );
-    }
+            <Alert variant="destructive" className="flex flex-col space-y-4 p-4 text-xs">
+                <div className="flex items-center space-x-3">
+                    <AlertCircleIcon className="h-6 w-6 text-red-600" />
+                    <div>
+                        <AlertTitle>No Companies Found or No Network Connection</AlertTitle>
+                        <AlertDescription className="text-xs">
+                            Please check your internet connection or try again later.
+                        </AlertDescription>
+                    </div>
+                </div>
 
-    if (accounts.length === 0) {
-        return <div className="text-muted-foreground">No new tasks found.</div>;
+                <div className="flex items-center space-x-3">
+                    <CheckCircle2Icon className="h-6 w-6 text-green-600" />
+                    <div>
+                        <AlertTitle className="text-black">Add New Companies</AlertTitle>
+                        <AlertDescription className="text-xs">
+                            You can start by adding new entries to populate your database.
+                        </AlertDescription>
+                    </div>
+                </div>
+            </Alert>
+        );
     }
 
     // Today

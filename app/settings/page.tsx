@@ -54,9 +54,7 @@ function SettingsContent() {
 
   if (!mounted) {
     return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
-        Loading settings...
-      </div>
+      <></>
     );
   }
 

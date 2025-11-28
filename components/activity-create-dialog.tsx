@@ -34,7 +34,7 @@ interface Activity {
 
     // optional outbound fields
     source: string;
-    callback?: string; // only callback remains optional
+    callback?: string;
     call_status: string;
     call_type: string;
 

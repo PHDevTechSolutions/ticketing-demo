@@ -9,9 +9,6 @@ import { SidebarLeft } from "@/components/sidebar-left";
 import { SidebarRight } from "@/components/sidebar-right";
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, } from "@/components/ui/breadcrumb";
-import { Alert, AlertTitle } from "@/components/ui/alert"
-import { AlertCircleIcon } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -157,91 +154,64 @@ function DashboardContent() {
                 </header>
 
                 <main className="flex flex-1 flex-col gap-4 p-4 overflow-auto">
-                    {loadingUser ? (
-                        <div className="flex items-center space-x-4">
-                            <Skeleton className="h-12 w-12 rounded-full" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[250px]" />
-                                <Skeleton className="h-4 w-[200px]" />
-                            </div>
-                        </div>
+                    {/* BUTTON TOGGLE VIEW COMPLETED */}
+                    <div className="flex justify-start">
+                        <Button type="button" onClick={() => setShowCompleted((v) => !v)} variant="outline"><Eye size={16} />
+                            {showCompleted ? "Hide Completed" : "View Completed"}</Button>
+                    </div>
 
-                    ) : loadingAccounts ? (
-                        <div className="flex items-center space-x-4">
-                            <Skeleton className="h-12 w-12 rounded-full" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[250px]" />
-                                <Skeleton className="h-4 w-[200px]" />
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            {error && (
-                                <Alert variant="destructive">
-                                    <AlertCircleIcon />
-                                    <AlertTitle>{error}</AlertTitle>
-                                </Alert>
-                            )}
+                    <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-${showCompleted ? "4" : "3"}  `}>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>New Task</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <NewTask referenceid={userDetails.referenceid} />
+                            </CardContent>
+                        </Card>
 
-                            {/* BUTTON TOGGLE VIEW COMPLETED */}
-                            <div className="flex justify-start">
-                                <Button type="button" onClick={() => setShowCompleted((v) => !v)} variant="outline"><Eye size={16} />
-                                    {showCompleted ? "Hide Completed" : "View Completed"}</Button>
-                            </div>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>In Progress</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Progress
+                                    referenceid={userDetails.referenceid}
+                                    target_quota={userDetails.target_quota}
+                                    dateCreatedFilterRange={dateCreatedFilterRange}
+                                    setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
+                            </CardContent>
+                        </Card>
 
-                            <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-${showCompleted ? "4" : "3"}  `}>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>New Task</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <NewTask referenceid={userDetails.referenceid} />
-                                    </CardContent>
-                                </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Scheduled</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Scheduled
+                                    referenceid={userDetails.referenceid}
+                                    target_quota={userDetails.target_quota}
+                                    dateCreatedFilterRange={dateCreatedFilterRange}
+                                    setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
+                            </CardContent>
+                        </Card>
 
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>In Progress</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Progress
-                                            referenceid={userDetails.referenceid}
-                                            target_quota={userDetails.target_quota}
-                                            dateCreatedFilterRange={dateCreatedFilterRange}
-                                            setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
-                                    </CardContent>
-                                </Card>
+                        {showCompleted && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Completed</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Completed
+                                        referenceid={userDetails.referenceid}
+                                        target_quota={userDetails.target_quota}
+                                        dateCreatedFilterRange={dateCreatedFilterRange}
+                                        setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
 
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Scheduled</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Scheduled
-                                            referenceid={userDetails.referenceid}
-                                            target_quota={userDetails.target_quota}
-                                            dateCreatedFilterRange={dateCreatedFilterRange}
-                                            setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
-                                    </CardContent>
-                                </Card>
-
-                                {showCompleted && (
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Completed</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Completed
-                                            referenceid={userDetails.referenceid}
-                                            target_quota={userDetails.target_quota}
-                                            dateCreatedFilterRange={dateCreatedFilterRange}
-                                            setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </div>
-                        </>
-                    )}
                 </main>
             </SidebarInset>
 

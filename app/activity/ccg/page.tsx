@@ -9,9 +9,6 @@ import { SidebarLeft } from "@/components/sidebar-left";
 import { SidebarRight } from "@/components/sidebar-right";
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, } from "@/components/ui/breadcrumb";
-import { Alert, AlertTitle } from "@/components/ui/alert"
-import { AlertCircleIcon } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
@@ -151,41 +148,13 @@ function DashboardContent() {
                 </header>
 
                 <main className="flex flex-1 flex-col gap-4 p-4 overflow-auto">
-                    {loadingUser ? (
-                        <div className="flex items-center space-x-4">
-                            <Skeleton className="h-12 w-12 rounded-full" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[250px]" />
-                                <Skeleton className="h-4 w-[200px]" />
-                            </div>
-                        </div>
-
-                    ) : loadingAccounts ? (
-                        <div className="flex items-center space-x-4">
-                            <Skeleton className="h-12 w-12 rounded-full" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[250px]" />
-                                <Skeleton className="h-4 w-[200px]" />
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            {error && (
-                                <Alert variant="destructive">
-                                    <AlertCircleIcon />
-                                    <AlertTitle>{error}</AlertTitle>
-                                </Alert>
-                            )}
-
-                            <div>
-                                <CCG
-                                    referenceid={userDetails.referenceid}
-                                    target_quota={userDetails.target_quota}
-                                    dateCreatedFilterRange={dateCreatedFilterRange}
-                                    setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
-                            </div>
-                        </>
-                    )}
+                    <div>
+                        <CCG
+                            referenceid={userDetails.referenceid}
+                            target_quota={userDetails.target_quota}
+                            dateCreatedFilterRange={dateCreatedFilterRange}
+                            setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
+                    </div>
                 </main>
             </SidebarInset>
 

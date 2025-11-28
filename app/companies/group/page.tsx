@@ -117,7 +117,6 @@ function DashboardContent() {
         const response = await fetch(
           `/api/com-fetch-account?referenceid=${encodeURIComponent(userDetails.referenceid)}`
         );
-        if (!response.ok) throw new Error("Failed to fetch accounts");
         const data = await response.json();
         setPosts(data.data || []);
         toast.success("Accounts loaded successfully!");
