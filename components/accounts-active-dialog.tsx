@@ -532,7 +532,8 @@ export function AccountDialog({
                 <Input
                   value={cn}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    // Kunin yung input value at tanggalin lahat ng non-digit characters
+                    const val = e.target.value.replace(/\D/g, "");
                     setFormData((prev) => {
                       const copy = [...prev.contact_number];
                       copy[i] = val;
@@ -541,6 +542,8 @@ export function AccountDialog({
                   }}
                   placeholder="Contact Number"
                   className="uppercase"
+                  inputMode="numeric"   // Para sa mobile numeric keyboard
+                  pattern="[0-9]*"      // Hint lang ito sa browser na numbers lang ang valid
                 />
                 <Button
                   type="button"

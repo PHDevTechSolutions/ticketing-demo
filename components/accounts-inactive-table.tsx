@@ -413,7 +413,7 @@ export function AccountsTable({
                 {/* Pending status note */}
                 {filteredData.some((account) => account.status === "Pending") && (
                     <div className="mt-2 text-sm text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2">
-                        The account with the status <strong>"Pending"</strong> needs approval from your Territory Sales Manager (TSM) to be verified before using it in creation of activity.
+                        The account with the status <strong>"Pending"</strong> needs approval from IT Department to be verified before using it in creation of activity.
                     </div>
                 )}
             </div>
