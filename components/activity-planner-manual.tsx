@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Accordion,
   AccordionItem,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card";
 
 interface Company {
+  id: string;  
   account_reference_number: string;
   company_name: string;
   contact_number?: string;
@@ -48,6 +49,8 @@ interface Manual {
 }
 
 interface ManualProps {
+  tsm: string;
+  manager: string;
   referenceid: string;
   target_quota?: string;
   dateCreatedFilterRange: DateRange | undefined;
@@ -57,6 +60,8 @@ interface ManualProps {
 }
 
 export const Manual: React.FC<ManualProps> = ({
+  tsm,
+  manager,
   referenceid,
   target_quota,
   dateCreatedFilterRange,
@@ -75,6 +80,11 @@ export const Manual: React.FC<ManualProps> = ({
 
   const [addingAccount, setAddingAccount] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // For activities right side search and pagination
+  const [activitySearchTerm, setActivitySearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch companies
   useEffect(() => {
@@ -197,6 +207,7 @@ export const Manual: React.FC<ManualProps> = ({
 
   const allowedStatuses = ["On-Progress", "Assisted", "Quote-Done", "SO-Done"];
 
+  // Merged data with company info and filtered by status and date range
   const mergedData = activities
     .filter((a) => allowedStatuses.includes(a.status))
     .filter((a) => isDateInRange(a.date_created, dateCreatedFilterRange))
@@ -238,9 +249,33 @@ export const Manual: React.FC<ManualProps> = ({
     ? filteredCompanies
     : filteredCompanies.slice(0, MAX_DISPLAY);
 
-  // Get tsm and manager from first activity (guard against empty)
-  const currentTsm = activities[0]?.tsm ?? "";
-  const currentManager = activities[0]?.manager ?? "";
+  // Activities filtered by search term (right side)
+  const filteredActivities = useMemo(() => {
+    if (!activitySearchTerm.trim()) return mergedData;
+
+    const term = activitySearchTerm.toLowerCase();
+    return mergedData.filter((item) => {
+      return (
+        item.company_name.toLowerCase().includes(term) ||
+        item.status.toLowerCase().includes(term) ||
+        item.activity_reference_number.toLowerCase().includes(term) ||
+        item.account_reference_number.toLowerCase().includes(term)
+      );
+    });
+  }, [activitySearchTerm, mergedData]);
+
+  const totalPages = Math.ceil(filteredActivities.length / ITEMS_PER_PAGE);
+
+  const paginatedActivities = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredActivities.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [currentPage, filteredActivities]);
+
+  const goToPage = (page: number) => {
+    if (page < 1) page = 1;
+    else if (page > totalPages) page = totalPages;
+    setCurrentPage(page);
+  };
 
   // Generates activity reference number from company initials + region + timestamp
   function generateActivityReferenceNumber(companyName: string): string {
@@ -293,53 +328,84 @@ export const Manual: React.FC<ManualProps> = ({
     }
   };
 
-  // Add activity handler with validation so no missing fields error
   const handleAddActivity = async (company: Company) => {
-    if (!referenceid) {
-      toast.error("Missing reference ID");
-      return;
-    }
+  if (!referenceid) {
+    toast.error("Missing reference ID");
+    return;
+  }
 
-    if (!currentTsm || !currentManager) {
-      toast.error("TSM or Manager information is missing.");
-      return;
-    }
+  if (!tsm || !manager) {
+    toast.error("TSM or Manager information is missing.");
+    return;
+  }
 
-    setAddingAccount(company.account_reference_number);
+  setAddingAccount(company.account_reference_number);
 
-    const newActivityReferenceNumber = generateActivityReferenceNumber(company.company_name);
+  const newActivityReferenceNumber = generateActivityReferenceNumber(company.company_name);
 
-    const payload = {
-      referenceid,
-      tsm: currentTsm,
-      manager: currentManager,
-      account_reference_number: company.account_reference_number,
-      status: "On-Progress",
-      activity_reference_number: newActivityReferenceNumber,
-    };
-
-    try {
-      const res = await fetch("/api/act-save-account", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        cache: "no-store",
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(`Failed to save activity: ${json.error || "Unknown error"}`);
-      } else {
-        toast.success("Activity added successfully");
-        await fetchActivities();
-      }
-    } catch (error) {
-      toast.error("Error saving activity");
-    } finally {
-      setAddingAccount(null);
-    }
+  const payload = {
+    referenceid,
+    tsm,
+    manager,
+    account_reference_number: company.account_reference_number,
+    status: "On-Progress",
+    activity_reference_number: newActivityReferenceNumber,
   };
+
+  try {
+    const res = await fetch("/api/act-save-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(`Failed to save activity: ${json.error || "Unknown error"}`);
+      setAddingAccount(null);
+      return;
+    }
+
+    // 2. Calculate new next_available_date based on type_client
+    const now = new Date();
+    let newDate: Date;
+
+    if (company.type_client === "TOP 50") {
+      newDate = new Date(now.setDate(now.getDate() + 15)); // after 15 days
+    } else {
+      newDate = new Date(now.setMonth(now.getMonth() + 1)); // after 1 month
+    }
+
+    // Format date as YYYY-MM-DD
+    const nextAvailableDate = newDate.toISOString().split("T")[0];
+
+    const updateRes = await fetch("/api/act-update-account-next-date", {
+  method: "PATCH",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    id: company.id, // <-- use numeric id here
+    next_available_date: nextAvailableDate,
+  }),
+});
+
+
+    const updateData = await updateRes.json();
+
+    if (!updateRes.ok) {
+      toast.error(`Failed to update next available date: ${updateData.error || "Unknown error"}`);
+    } else {
+      toast.success("Activity added and next available date updated.");
+      await fetchActivities();
+    }
+  } catch (error) {
+    toast.error("Error saving activity");
+  } finally {
+    setAddingAccount(null);
+  }
+};
+
 
   if (isLoading) {
     return (
@@ -377,7 +443,7 @@ export const Manual: React.FC<ManualProps> = ({
 
   return (
     <div className="flex flex-col md:flex-row gap-4">
-      {/* LEFT SIDE — COMPANY CARD */}
+      {/* LEFT SIDE — COMPANIES */}
       <Card className="w-full md:w-1/3 p-3 rounded-lg">
         <CardHeader className="p-0 mb-3">
           <CardTitle className="text-sm font-semibold">Companies</CardTitle>
@@ -397,7 +463,7 @@ export const Manual: React.FC<ManualProps> = ({
               No company info available.
             </div>
           ) : (
-            <Accordion type="multiple" className="overflow-auto space-y-2 p-2">
+            <Accordion type="multiple" className="overflow-auto space-y-2 p-2 max-h-[500px]">
               {displayedCompanies.map((c) => (
                 <AccordionItem key={c.account_reference_number} value={c.account_reference_number}>
                   <div className="flex items-center justify-between text-xs font-semibold gap-2 px-4 py-2">
@@ -414,7 +480,7 @@ export const Manual: React.FC<ManualProps> = ({
                       variant="outline"
                       disabled={addingAccount === c.account_reference_number}
                       onClick={(e) => {
-                        e.stopPropagation(); // prevent accordion toggle when clicking button
+                        e.stopPropagation();
                         handleAddActivity(c);
                       }}
                       className="text-xs px-3 py-1"
@@ -444,86 +510,128 @@ export const Manual: React.FC<ManualProps> = ({
         </CardContent>
       </Card>
 
-      {/* RIGHT SIDE — ACTIVITIES CARD */}
-      <Card className="w-full md:w-2/3 p-4 rounded-xl">
+      {/* RIGHT SIDE — ACTIVITIES */}
+      <Card className="w-full md:w-2/3 p-4 rounded-xl flex flex-col">
         <div className="mb-2 text-xs font-bold">
-          Total On-Progress Activities: {mergedData.length}
+          Total On-Progress Activities: {filteredActivities.length}
         </div>
 
-        <div className="max-h-[400px] overflow-auto space-y-8 custom-scrollbar">
+        <input
+          type="search"
+          placeholder="Search activities by company, status, reference number..."
+          value={activitySearchTerm}
+          onChange={(e) => {
+            setActivitySearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="mb-3 px-3 py-2 border rounded-md text-sm w-full"
+        />
+
+        <div className="max-h-[400px] overflow-auto space-y-8 custom-scrollbar flex-grow">
           <Accordion type="single" collapsible className="w-full">
-            {mergedData.map((item) => {
-              let badgeColor: "default" | "secondary" | "outline" = "default";
+            {paginatedActivities.length === 0 ? (
+              <div className="text-center text-muted-foreground text-sm py-10">
+                No activities found.
+              </div>
+            ) : (
+              paginatedActivities.map((item) => {
+                let badgeColor: "default" | "secondary" | "outline" = "default";
 
-              if (item.status === "Assisted" || item.status === "SO-Done") {
-                badgeColor = "secondary";
-              } else if (item.status === "Quote-Done") {
-                badgeColor = "outline";
-              }
+                if (item.status === "Assisted" || item.status === "SO-Done") {
+                  badgeColor = "secondary";
+                } else if (item.status === "Quote-Done") {
+                  badgeColor = "outline";
+                }
 
-              return (
-                <AccordionItem key={item.id} value={item.id}>
-                  <div className="p-2 cursor-pointer select-none">
-                    <div className="flex justify-between items-center">
-                      <AccordionTrigger className="flex-1 text-xs font-semibold">
-                        {new Date(item.date_updated ?? item.date_created).toLocaleDateString()}{" "}
-                        <span className="text-[10px] text-muted-foreground mx-1">|</span>{" "}
-                        {new Date(item.date_updated ?? item.date_created).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}{" "}
-                        <span className="mx-1">-</span> {item.company_name}
-                      </AccordionTrigger>
+                return (
+                  <AccordionItem key={item.id} value={item.id}>
+                    <div className="p-2 cursor-pointer select-none">
+                      <div className="flex justify-between items-center">
+                        <AccordionTrigger className="flex-1 text-xs font-semibold">
+                          {new Date(item.date_updated ?? item.date_created).toLocaleDateString()}{" "}
+                          <span className="text-[10px] text-muted-foreground mx-1">|</span>{" "}
+                          {new Date(item.date_updated ?? item.date_created).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}{" "}
+                          <span className="mx-1">-</span> {item.company_name}
+                        </AccordionTrigger>
 
-                      <div className="flex gap-2 ml-4">
-                        <CreateActivityDialog
-                          target_quota={target_quota}
-                          referenceid={item.referenceid}
-                          tsm={item.tsm}
-                          manager={item.manager}
-                          type_client={item.type_client}
-                          contact_number={item.contact_number}
-                          activityReferenceNumber={item.activity_reference_number}
-                          accountReferenceNumber={item.account_reference_number}
-                          onCreated={fetchActivities}
-                        />
+                        <div className="flex gap-2 ml-4">
+                          <CreateActivityDialog
+                            target_quota={target_quota}
+                            referenceid={item.referenceid}
+                            tsm={item.tsm}
+                            manager={item.manager}
+                            type_client={item.type_client}
+                            contact_number={item.contact_number}
+                            activityReferenceNumber={item.activity_reference_number}
+                            accountReferenceNumber={item.account_reference_number}
+                            onCreated={fetchActivities}
+                          />
 
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          disabled={updatingId === item.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDoneDialog(item.id);
-                          }}
-                        >
-                          {updatingId === item.id ? "Updating..." : "Done"}
-                        </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={updatingId === item.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDoneDialog(item.id);
+                            }}
+                          >
+                            {updatingId === item.id ? "Updating..." : "Done"}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="ml-1">
+                        <Badge variant={badgeColor} className="text-[8px]">
+                          {item.status.replace("-", " ")}
+                        </Badge>
                       </div>
                     </div>
 
-                    <div className="ml-1">
-                      <Badge variant={badgeColor} className="text-[8px]">
-                        {item.status.replace("-", " ")}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <AccordionContent className="text-xs px-4 py-2">
-                    <p>
-                      <strong>Contact Number:</strong> {item.contact_number}
-                    </p>
-                    <p>
-                      <strong>Account Reference Number:</strong> {item.account_reference_number}
-                    </p>
-                    <p>
-                      <strong>Date Created:</strong> {new Date(item.date_created).toLocaleDateString()}
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
+                    <AccordionContent className="text-xs px-4 py-2">
+                      <p>
+                        <strong>Contact Number:</strong> {item.contact_number}
+                      </p>
+                      <p>
+                        <strong>Account Reference Number:</strong> {item.account_reference_number}
+                      </p>
+                      <p>
+                        <strong>Date Created:</strong> {new Date(item.date_created).toLocaleDateString()}
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })
+            )}
           </Accordion>
+        </div>
+
+        {/* Pagination controls */}
+        <div className="mt-4 flex justify-center items-center space-x-2 text-xs">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={currentPage <= 1}
+            onClick={() => goToPage(currentPage - 1)}
+          >
+            Prev
+          </Button>
+
+          <span>
+            Page {currentPage} / {totalPages || 1}
+          </span>
+
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={currentPage >= totalPages}
+            onClick={() => goToPage(currentPage + 1)}
+          >
+            Next
+          </Button>
         </div>
 
         <DoneDialog

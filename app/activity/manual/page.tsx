@@ -151,6 +151,8 @@ function DashboardContent() {
                     <div>
                         <Manual
                             referenceid={userDetails.referenceid}
+                            tsm={userDetails.tsm}
+                            manager={userDetails.manager}
                             target_quota={userDetails.target_quota}
                             dateCreatedFilterRange={dateCreatedFilterRange}
                             setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />

@@ -4,9 +4,7 @@ import React from "react";
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
@@ -16,12 +14,13 @@ interface AccountsActivePaginationProps<TData> {
   table: Table<TData>;
 }
 
-export function AccountsActivePagination<TData>({
-  table,
-}: AccountsActivePaginationProps<TData>) {
+export function AccountsActivePagination<TData>({ table }: AccountsActivePaginationProps<TData>) {
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageCount = table.getPageCount();
+
   return (
     <Pagination>
-      <PaginationContent>
+      <PaginationContent className="flex items-center space-x-4">
         <PaginationItem>
           <PaginationPrevious
             href="#"
@@ -34,31 +33,10 @@ export function AccountsActivePagination<TData>({
           />
         </PaginationItem>
 
-        {/* Render page numbers */}
-        {Array.from({ length: table.getPageCount() }).map((_, i) => {
-          const pageIndex = i;
-          const isActive = table.getState().pagination.pageIndex === pageIndex;
-          return (
-            <PaginationItem key={pageIndex}>
-              <PaginationLink
-                href="#"
-                isActive={isActive}
-                onClick={(e) => {
-                  e.preventDefault();
-                  table.setPageIndex(pageIndex);
-                }}
-              >
-                {pageIndex + 1}
-              </PaginationLink>
-            </PaginationItem>
-          );
-        })}
-
-        {table.getPageCount() > 5 && (
-          <PaginationItem>
-            <PaginationEllipsis />
-          </PaginationItem>
-        )}
+        {/* Current page / total pages */}
+        <div className="px-4 font-medium">
+          {pageCount === 0 ? "0 / 0" : `${pageIndex + 1} / ${pageCount}`}
+        </div>
 
         <PaginationItem>
           <PaginationNext

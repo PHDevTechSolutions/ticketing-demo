@@ -1,7 +1,8 @@
+// pages/api/history.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../utils/supabase";
+import redis from "../../lib/redis";
 
-// Converts undefined or empty string → null
 const safe = (v: any) => (v === undefined || v === "" ? null : v);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -11,15 +12,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const {
+      activity_reference_number,
+      account_reference_number,
+      status,
+      type_activity,
       referenceid,
       tsm,
       manager,
       target_quota,
       type_client,
-      activity_reference_number,
-      account_reference_number,
-      status,
-      type_activity,
       source,
       callback,
       call_status,
@@ -43,25 +44,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       date_updated,
     } = req.body;
 
-    // -----------------------------
-    // 🔍 VALIDATION (required fields only)
-    // -----------------------------
-    if (!activity_reference_number) {
+    // Validation
+    if (!activity_reference_number)
       return res.status(400).json({ error: "Missing activity_reference_number" });
-    }
-    if (!account_reference_number) {
+    if (!account_reference_number)
       return res.status(400).json({ error: "Missing account_reference_number" });
-    }
-    if (!status) {
-      return res.status(400).json({ error: "Missing status" });
-    }
-    if (!type_activity) {
+    if (!status) return res.status(400).json({ error: "Missing status" });
+    if (!type_activity)
       return res.status(400).json({ error: "Missing type_activity" });
+
+    // Check cache if activity_reference_number exists
+    const cacheKey = `history:${activity_reference_number}`;
+    const cached = await redis.get(cacheKey);
+
+    if (cached && typeof cached === "string") {
+      return res.status(200).json({ success: true, data: JSON.parse(cached), cached: true });
     }
 
-    // -----------------------------
-    // ✅ SAFE INSERT (no undefined ever)
-    // -----------------------------
+    // Insert sa Supabase kung walang cache
     const { data, error } = await supabase
       .from("history")
       .insert({
@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         dr_number: safe(dr_number),
         actual_sales: safe(actual_sales),
         payment_terms: safe(payment_terms),
-        delivery_date: safe(delivery_date),       
+        delivery_date: safe(delivery_date),
         date_followup: safe(date_followup),
         remarks: safe(remarks),
         start_date: safe(start_date),
@@ -98,14 +98,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
       .select();
 
-    // Supabase error handler
     if (error) {
       console.error("Supabase Insert Error:", error);
       return res.status(500).json({ error: error.message });
     }
 
-    // Success
-    return res.status(200).json({ success: true, data });
+    // Cache the inserted data for 5 minutes (300 seconds)
+    await redis.set(cacheKey, JSON.stringify(data), { ex: 300 });
+
+    return res.status(200).json({ success: true, data, cached: false });
   } catch (err: any) {
     console.error("Server Error:", err);
     return res.status(500).json({ error: "Server Error" });

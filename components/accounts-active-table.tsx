@@ -81,44 +81,44 @@ export function AccountsTable({
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [removeRemarks, setRemoveRemarks] = useState("");
   const [rowSelection, setRowSelection] = useState<{ [key: string]: boolean }>({});
-  
+
   // For bulk transfer
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [agents, setAgents] = useState<any[]>([]);
 
   // Filter out removed accounts immediately
   const filteredData = useMemo(() => {
-    // Allowed type_client values for display
     const allowedTypes = ["TOP 50", "NEXT 30", "BALANCE 20"];
+    const normalizedAllowedTypes = allowedTypes.map(t => t.toLowerCase());
 
-    // Start filtering: status must be "Active" AND type_client must be in allowedTypes
-    let data = localPosts.filter(
-      (item) => item.status === "Active" && allowedTypes.includes(item.type_client)
+    let data = localPosts.filter(item =>
+      item.status?.toLowerCase() === "active" &&
+      normalizedAllowedTypes.includes(item.type_client?.toLowerCase() ?? "")
     );
 
-    data = data.filter((item) => {
+    data = data.filter(item => {
       const matchesSearch =
         !globalFilter ||
         Object.values(item).some(
-          (val) =>
+          val =>
             val != null &&
             String(val).toLowerCase().includes(globalFilter.toLowerCase())
         );
 
-      // Filtering by selected typeFilter: if 'all' then all allowed types shown,
-      // else only those matching the selected type
-      const matchesType = typeFilter === "all" || item.type_client === typeFilter;
+      const matchesType =
+        typeFilter === "all" ||
+        (item.type_client?.toLowerCase() === typeFilter.toLowerCase());
 
-      // Since you want only Active status, you can keep the statusFilter logic for flexibility,
-      // but actual data is already filtered by status === "Active"
-      const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" ||
+        (item.status?.toLowerCase() === statusFilter.toLowerCase());
 
-      const matchesIndustry = industryFilter === "all" || item.industry === industryFilter;
+      const matchesIndustry =
+        industryFilter === "all" || item.industry === industryFilter;
 
       return matchesSearch && matchesType && matchesStatus && matchesIndustry;
     });
 
-    // Sorting logic unchanged
     data = data.sort((a, b) => {
       if (alphabeticalFilter === "asc") {
         return a.company_name.localeCompare(b.company_name);
@@ -145,6 +145,7 @@ export function AccountsTable({
     alphabeticalFilter,
     dateCreatedFilter,
   ]);
+
 
   // Download
   function convertToCSV(data: Account[]) {
@@ -427,7 +428,7 @@ export function AccountsTable({
       }
 
       toast.success("Accounts transferred successfully! Need approval from your Territory Sales Manager.");
-      
+
       await onRefreshAccountsAction();
 
       setRowSelection({});
