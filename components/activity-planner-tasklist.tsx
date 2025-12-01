@@ -527,7 +527,6 @@ export const TaskList: React.FC<CompletedProps> = ({
                                         {[
                                             { label: "Type Client", value: item.type_client },
                                             { label: "Project Name", value: item.project_name },
-                                            { label: "Product Category", value: item.product_category },
                                             { label: "Project Type", value: item.project_type },
                                             { label: "Source", value: item.source },
                                             { label: "Target Quota", value: item.target_quota },

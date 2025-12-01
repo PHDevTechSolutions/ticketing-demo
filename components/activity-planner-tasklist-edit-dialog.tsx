@@ -53,7 +53,6 @@ interface TaskListEditDialogProps {
 
 const editableFields: (keyof Completed)[] = [
   "project_name",
-  "product_category",
   "project_type",
   "source",
   "type_activity", // disabled input

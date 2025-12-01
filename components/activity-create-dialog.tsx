@@ -40,6 +40,8 @@ interface Activity {
 
     // quotation fields
     product_category?: string;
+    product_quantity?: string;
+    product_amount?: string;
     project_type?: string;
     project_name?: string;
     quotation_number?: string;
@@ -122,6 +124,8 @@ export function CreateActivityDialog({
     const [callType, setCallType] = useState("");
 
     const [productCat, setProductCat] = useState("");
+    const [productAmount, setProductAmount] = useState("");
+    const [productQuantity, setProductQuantity] = useState("");
     const [projectType, setProjectType] = useState("");
     const [projectName, setProjectName] = useState("");
     const [quotationNumber, setQuotationNumber] = useState("");
@@ -157,6 +161,8 @@ export function CreateActivityDialog({
         callStatus: "",
         callType: "",
         productCat: "",
+        productQuantity: "",
+        productAmount: "",
         projectType: "",
         projectName: "",
         quotationNumber: "",
@@ -178,6 +184,8 @@ export function CreateActivityDialog({
         setCallStatus(initialState.callStatus);
         setCallType(initialState.callType);
         setProductCat(initialState.productCat);
+        setProductQuantity(initialState.productQuantity);
+        setProductAmount(initialState.productAmount);
         setProjectType(initialState.projectType);
         setProjectName(initialState.projectName);
         setQuotationNumber(initialState.quotationNumber);
@@ -258,14 +266,6 @@ export function CreateActivityDialog({
                 }
                 return true;
 
-            case 5:
-                // Remarks optional, status required
-                if (!status.trim()) {
-                    toast.error("Please select Status.");
-                    return false;
-                }
-                return true;
-
             default:
                 return true;
         }
@@ -302,6 +302,8 @@ export function CreateActivityDialog({
             call_type: callType,
 
             product_category: productCat || undefined,
+            product_quantity: productQuantity || undefined,
+            product_amount: productAmount || undefined,
             project_type: projectType || undefined,
             project_name: projectName || undefined,
             quotation_number: quotationNumber || undefined,
@@ -570,6 +572,10 @@ export function CreateActivityDialog({
                                     setSource={setSource}
                                     productCat={productCat}
                                     setProductCat={setProductCat}
+                                    productQuantity={productQuantity}
+                                    setProductQuantity={setProductQuantity}
+                                    productAmount={productAmount}
+                                    setProductAmount={setProductAmount}
                                     projectType={projectType}
                                     setProjectType={setProjectType}
                                     projectName={projectName}
