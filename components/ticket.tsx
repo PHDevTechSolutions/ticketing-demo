@@ -40,6 +40,7 @@ interface MergedActivity extends Ticket {
 
 interface Ticket {
     _id: string;
+    ticket_reference_number: string;
     ticket_received?: string;
     ticket_endorsed?: string;
     traffic?: string;
@@ -873,6 +874,7 @@ export const Ticket: React.FC<TicketProps> = ({
                                                         <UpdateTicketDialog
                                                             {...{
                                                                 _id: item._id,
+                                                                ticket_reference_number: item.ticket_reference_number,
                                                                 ticket_received: item.ticket_received,
                                                                 ticket_endorsed: item.ticket_endorsed,
                                                                 traffic: item.traffic,
