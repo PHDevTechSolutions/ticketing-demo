@@ -44,6 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const body = req.body;
 
     // Extract and validate as strings to avoid undefined errors
+    const account_reference_number = typeof body.account_reference_number === "string" ? body.account_reference_number : "";
     const company_name = typeof body.company_name === "string" ? body.company_name : "";
     const contact_person = typeof body.contact_person === "string" ? body.contact_person : "";
     const contact_number = typeof body.contact_number === "string" ? body.contact_number : "";
@@ -57,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // (Optional) Basic required field check - remove if no validation needed
     if (
+      !account_reference_number ||
       !company_name ||
       !contact_person ||
       !contact_number ||
@@ -77,6 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
 
     const result = await collection.insertOne({
+      account_reference_number,
       company_name,
       contact_person,
       contact_number,

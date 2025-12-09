@@ -81,6 +81,7 @@ interface UpdateActivityDialogProps {
   contact_person: string;
   address: string;
   company_name: string;
+  account_reference_number: string;
   ticket_received?: string;
   ticket_endorsed?: string;
   traffic?: string;
@@ -150,6 +151,7 @@ export function UpdateTicketDialog({
   contact_person,
   email_address,
   address,
+  account_reference_number,
   ticket_received,
   ticket_endorsed,
   traffic,
@@ -301,98 +303,98 @@ export function UpdateTicketDialog({
 
 
   const handleUpdate = async () => {
-  setLoading(true);
+    setLoading(true);
 
-  const newActivity: Activity = {
-    _id: activityRef,
-    ticket_reference_number: ticketReferenceNumber,
-    client_segment: clientSegment,
-    traffic: trafficState,
-    source_company: sourceCompanyState,
-    ticket_received: ticketReceivedState,
-    ticket_endorsed: ticketEndorsedState,
-    channel: channelState,
-    wrap_up: wrapUpState,
-    source: sourceState,
-    customer_type: customerTypeState,
-    customer_status: customerStatusState,
-    status: statusState,
-    department: departmentState,
-    manager: managerState,
-    agent: agentState,
-    remarks: remarksState,
-    inquiry: inquiryState,
-    item_code: itemCodeState,
-    item_description: itemDescriptionState,
-    po_number: poNumberState,
-    so_date: soDateState,
-    so_number: soNumberState,
-    so_amount: soAmountState,
-    quotation_number: quotationNumberState,
-    quotation_amount: quotationAmountState,
-    qty_sold: qtySoldState,
-    payment_terms: paymentTermsState,
-    po_source: poSourceState,
-    payment_date: paymentDateState,
-    delivery_date: deliveryDateState,
-    date_created: dateCreatedState,
-    date_updated: new Date().toISOString(),
-  };
+    const newActivity: Activity = {
+      _id: activityRef,
+      ticket_reference_number: ticketReferenceNumber,
+      client_segment: clientSegment,
+      traffic: trafficState,
+      source_company: sourceCompanyState,
+      ticket_received: ticketReceivedState,
+      ticket_endorsed: ticketEndorsedState,
+      channel: channelState,
+      wrap_up: wrapUpState,
+      source: sourceState,
+      customer_type: customerTypeState,
+      customer_status: customerStatusState,
+      status: statusState,
+      department: departmentState,
+      manager: managerState,
+      agent: agentState,
+      remarks: remarksState,
+      inquiry: inquiryState,
+      item_code: itemCodeState,
+      item_description: itemDescriptionState,
+      po_number: poNumberState,
+      so_date: soDateState,
+      so_number: soNumberState,
+      so_amount: soAmountState,
+      quotation_number: quotationNumberState,
+      quotation_amount: quotationAmountState,
+      qty_sold: qtySoldState,
+      payment_terms: paymentTermsState,
+      po_source: poSourceState,
+      payment_date: paymentDateState,
+      delivery_date: deliveryDateState,
+      date_created: dateCreatedState,
+      date_updated: new Date().toISOString(),
+    };
 
-  try {
-    const res = await fetch("/api/act-save-activity", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newActivity),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) {
-      toast.error(result.error || "Failed to save activity.");
-      setLoading(false);
-      return;
-    }
-
-    if (statusState === "Endorsed") {
-      const endorsedData = {
-        company_name,
-        contact_person,
-        contact_number,
-        email_address,
-        address,
-        ticket_reference_number: ticketReferenceNumber,
-        wrap_up: wrapUpState,
-        inquiry: inquiryState,
-        manager: managerState,
-        agent: agentState,
-      };
-
-      const endorsedRes = await fetch("/api/act-endorsed-ticket", {
-        method: "POST",
+    try {
+      const res = await fetch("/api/act-save-activity", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(endorsedData),
+        body: JSON.stringify(newActivity),
       });
 
-      if (!endorsedRes.ok) {
-        const err = await endorsedRes.json();
-        toast.error(err.error || "Failed to save endorsed ticket.");
+      const result = await res.json();
+
+      if (!res.ok) {
+        toast.error(result.error || "Failed to save activity.");
         setLoading(false);
         return;
       }
+
+      if (statusState === "Endorsed") {
+        const endorsedData = {
+          account_reference_number,
+          company_name,
+          contact_person,
+          contact_number,
+          email_address,
+          address,
+          ticket_reference_number: ticketReferenceNumber,
+          wrap_up: wrapUpState,
+          inquiry: inquiryState,
+          manager: managerState,
+          agent: agentState,
+        };
+
+        const endorsedRes = await fetch("/api/act-endorsed-ticket", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(endorsedData),
+        });
+
+        if (!endorsedRes.ok) {
+          const err = await endorsedRes.json();
+          toast.error(err.error || "Failed to save endorsed ticket.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      toast.success("Activity saved successfully!");
+      onCreated(newActivity);
+      setStep(1);
+      setSheetOpen(false);
+    } catch {
+      toast.error("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    toast.success("Activity saved successfully!");
-    onCreated(newActivity);
-    setStep(1);
-    setSheetOpen(false);
-  } catch {
-    toast.error("Server error. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const onSheetOpenChange = (open: boolean) => {
     if (!open) {

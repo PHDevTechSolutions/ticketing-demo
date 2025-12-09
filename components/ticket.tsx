@@ -910,6 +910,7 @@ export const Ticket: React.FC<TicketProps> = ({
                                                                 company_name: item.company_name,
                                                                 contact_person: item.contact_person,
                                                                 address: item.address,
+                                                                account_reference_number: item.account_reference_number,
                                                             }}
                                                             onCreated={() => fetchActivities()}
                                                         />
