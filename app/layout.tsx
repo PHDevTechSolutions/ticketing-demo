@@ -18,9 +18,12 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 export const metadata: Metadata = {
-  title: "Ecodesk - Customer Ticketing Management System",
-  description: "Developed by IT Team and Leroux Y Xchire",
-};
+  title: "Stash - IT Asset Management System",
+  description: "Localized IT Asset Management System built with Next.js and Tailwind CSS",
+  icons: {
+    icon: "/stash-mini-darkmode.png",
+  },
+}
 
 export default function RootLayout({
   children,
@@ -35,7 +38,7 @@ export default function RootLayout({
             <Reminders />
             {children}
           </ThemeProvider>
-          <Toaster />
+          <Toaster richColors />
         </UserProvider>
       </body>
     </html>

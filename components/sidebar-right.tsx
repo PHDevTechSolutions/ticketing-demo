@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { DatePicker } from "@/components/date-picker";
-import { NavUser } from "@/components/nav-user";
+import { NavUser } from "@/components/nav/user";
 import { Sidebar, SidebarContent,  SidebarFooter, SidebarHeader, SidebarSeparator, } from "@/components/ui/sidebar";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { useFormat } from "@/contexts/FormatContext";

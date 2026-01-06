@@ -1,67 +1,74 @@
-import { MongoClient, ObjectId, Db } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import bcrypt from "bcrypt";
 
-// Ensure the MONGODB_URI environment variable is defined
+// MONGODB_URI
 if (!process.env.MONGODB_URI) {
   throw new Error("Please define the MONGODB_URI environment variable");
 }
 
 const uri = process.env.MONGODB_URI;
-
-// 🔹 Reuse Mongo client across hot reloads in dev
-let client: MongoClient;
+let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient>;
 
-declare global {
-  // extend global type para iwas TS errors
-  // eslint-disable-next-line no-var
-  var _mongoClient: MongoClient | undefined;
-}
-
+// MongoDB connection
 if (process.env.NODE_ENV === "development") {
   if (!global._mongoClient) {
-    global._mongoClient = new MongoClient(uri);
+    client = new MongoClient(uri);
+    global._mongoClient = client;
+  } else {
+    client = global._mongoClient;
   }
-  client = global._mongoClient;
   clientPromise = client.connect();
 } else {
   client = new MongoClient(uri);
   clientPromise = client.connect();
 }
 
-// 🔹 Exported function for database connection
-export async function connectToDatabase(): Promise<Db> {
+// Export database connections
+export default clientPromise;
+
+// Connection to Database
+export async function connectToDatabase() {
   const client = await clientPromise;
-  return client.db("ecoshift"); // Main DB
+  return client.db("Asset");
 }
 
-
-// 🔹 Register a new user
-export async function registerUser({
-  userName,
-  Email,
-  Password,
-}: {
-  userName: string;
-  Email: string;
-  Password: string;
-}) {
+// Register a new user
+export async function registerUser(
+  { 
+    Email, 
+    Password, 
+    Role, 
+    Firstname, 
+    Lastname,
+    ReferenceID
+  }: { 
+    Email: string; 
+    Password: string;
+    Role: string;
+    Firstname: string;
+    Lastname: string;
+    ReferenceID: string;
+  }) {
   const db = await connectToDatabase();
   const usersCollection = db.collection("users");
 
-  // Check if email already exists
+  // Check if the email already exists in the database
   const existingUser = await usersCollection.findOne({ Email });
   if (existingUser) {
     return { success: false, message: "Email already in use" };
   }
 
-  // Hash password
+  // Hash the password before saving it to the database
   const hashedPassword = await bcrypt.hash(Password, 10);
 
-  // Insert new user
+  // Insert the new user into the collection
   await usersCollection.insertOne({
-    userName,
     Email,
+    Role,
+    Firstname,
+    Lastname,
+    ReferenceID,
     Password: hashedPassword,
     createdAt: new Date(),
   });
@@ -69,40 +76,22 @@ export async function registerUser({
   return { success: true };
 }
 
-// 🔹 Validate user credentials (with caching layer optional)
-const userCache = new Map<string, any>(); // simple in-memory cache (FDT style)
-
-export async function validateUser({
-  Email,
-  Password,
-}: {
-  Email: string;
-  Password: string;
-}) {
-  // Check cache first (avoid DB hit)
-  if (userCache.has(Email)) {
-    const cachedUser = userCache.get(Email);
-    const isValidPassword = await bcrypt.compare(Password, cachedUser.Password);
-    if (isValidPassword) return { success: true, user: cachedUser };
-  }
-
+// Validate user credentials
+export async function validateUser({ Email, Password }: { Email: string; Password: string; }) {
   const db = await connectToDatabase();
   const usersCollection = db.collection("users");
 
-  // Find user in DB
+  // Find the user by email
   const user = await usersCollection.findOne({ Email });
   if (!user) {
     return { success: false, message: "Invalid email or password" };
   }
 
-  // Validate password
+  // Compare the provided password with the stored hashed password
   const isValidPassword = await bcrypt.compare(Password, user.Password);
   if (!isValidPassword) {
     return { success: false, message: "Invalid email or password" };
   }
 
-  // Save to cache for faster next access
-  userCache.set(Email, user);
-
-  return { success: true, user };
+  return { success: true, user }; 
 }
