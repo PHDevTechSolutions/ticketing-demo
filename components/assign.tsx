@@ -404,7 +404,6 @@ export const Assign: React.FC<AssignProps> = ({
         }
     };
 
-
     const startEdit = (item: AssignedAsset) => {
         setEditId(item.id);
         setEditData({
@@ -446,7 +445,6 @@ export const Assign: React.FC<AssignProps> = ({
             toast.error(error.message);
         }
     };
-
 
     return (
         <>

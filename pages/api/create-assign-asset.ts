@@ -63,7 +63,7 @@ export default async function handler(
 
         const { error: updateError } = await supabase
             .from("inventory")
-            .update({ status: "Deploy" })
+            .update({ status: "Deploy", new_user, old_user })
             .in("id", inventoryIds);
 
         if (updateError) throw updateError;

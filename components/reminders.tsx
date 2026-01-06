@@ -244,7 +244,7 @@ export function Reminders() {
           <DialogHeader>
             <DialogTitle>Logout Reminder</DialogTitle>
             <DialogDescription>
-              Don't forget to logout the taskflow. Happy selling!
+              Don't forget to logout the stash.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
