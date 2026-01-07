@@ -36,7 +36,7 @@ export const InventoryDialog: React.FC<InventoryDialogProps> = ({
     const assetTypeOptions = ["Laptop", "Monitor", "Desktop"];
     const statusOptions = [
         "Spare",
-        "Deploy",
+        "Deployed",
         "Lend",
         "Missing",
         "Defective",
