@@ -1,7 +1,14 @@
 "use client";
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -11,59 +18,78 @@ interface StatusCardProps {
   userId?: string;
 }
 
+const statusMeta: Record<
+  string,
+  { title: string; description: string; link: string; linkLabel: string }
+> = {
+  spare: {
+    title: "Spare",
+    description:
+      "Available IT equipments and devices that are ready for deployment or replacement.",
+    link: "/asset/inventory",
+    linkLabel: "View Spare",
+  },
+  deployed: {
+    title: "Deployed",
+    description:
+      "IT equipments and devices currently assigned and actively used by users or departments.",
+    link: "/asset/inventory",
+    linkLabel: "View Deployed",
+  },
+  missing: {
+    title: "Missing",
+    description:
+      "IT equipments and devices that are unaccounted for and require investigation or reporting.",
+    link: "/asset/inventory",
+    linkLabel: "View Missing",
+  },
+  dispose: {
+    title: "Disposed",
+    description:
+      "IT equipments and devices that are marked for disposal, recycling, or decommissioning.",
+    link: "/asset/disposal",
+    linkLabel: "View Dispose",
+  },
+};
+
 export function StatusCard({ counts, userId }: StatusCardProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-      {["spare", "deployed", "missing", "dispose"].map((status) => (
-        <Card key={status} className="flex flex-col justify-between">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold capitalize">{status}</CardTitle>
-          </CardHeader>
+      {Object.keys(statusMeta).map((status) => {
+        const meta = statusMeta[status];
+        const total = counts[status] ?? 0;
 
-          <CardContent className="flex items-center justify-between font-semibold">
-            <span>
-              {counts[status as keyof typeof counts] === 0
-                ? "No items"
-                : `Total ${counts[status as keyof typeof counts]} items`}
-            </span>
+        return (
+          <Card key={status} className="flex flex-col justify-between">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">
+                {meta.title}
+              </CardTitle>
+              <CardDescription>{meta.description}</CardDescription>
+            </CardHeader>
 
-            <Badge className="h-8 min-w-[2rem] rounded-full px-2 font-mono tabular-nums">
-              {counts[status as keyof typeof counts]}
-            </Badge>
-          </CardContent>
-          <Separator />
-          <CardFooter className="flex justify-end gap-2">
-            {status === "spare" && (
+            <CardContent className="flex items-center justify-between font-semibold">
+              <span>
+                {total === 0 ? "No items" : `Total ${total} items`}
+              </span>
+
+              <Badge className="h-8 min-w-[2rem] rounded-full px-2 font-mono tabular-nums">
+                {total}
+              </Badge>
+            </CardContent>
+
+            <Separator />
+
+            <CardFooter className="flex justify-end">
               <Button variant="outline" asChild>
-                <a href={`/asset/inventory?id=${encodeURIComponent(userId ?? "")}`}>
-                  View Spare
+                <a href={`${meta.link}?id=${encodeURIComponent(userId ?? "")}`}>
+                  {meta.linkLabel}
                 </a>
               </Button>
-            )}
-            {status === "deployed" && (
-              <Button variant="outline" asChild>
-                <a href={`/asset/inventory?id=${encodeURIComponent(userId ?? "")}`}>
-                  View Deploy
-                </a>
-              </Button>
-            )}
-            {status === "missing" && (
-              <Button variant="outline" asChild>
-                <a href={`/asset/inventory?id=${encodeURIComponent(userId ?? "")}`}>
-                  View Missing
-                </a>
-              </Button>
-            )}
-            {status === "dispose" && (
-              <Button variant="outline" asChild>
-                <a href={`/asset/disposal?id=${encodeURIComponent(userId ?? "")}`}>
-                  View Dispose
-                </a>
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-      ))}
+            </CardFooter>
+          </Card>
+        );
+      })}
     </div>
   );
 }
