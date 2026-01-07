@@ -748,7 +748,7 @@ export const Inventory: React.FC<TicketProps> = ({
                                     <TableCell>{item.asset_tag || "-"}</TableCell>
                                     <TableCell>{item.asset_type || "-"}</TableCell>
                                     <TableCell>
-                                        <Badge className={statusColors[item.status] ?? "bg-gray-100 text-gray-700"}>
+                                        <Badge className={statusColors[item.status] ?? "bg-gray-100 text-gray-700 uppercase"}>
                                             {item.status}
                                         </Badge>
                                     </TableCell>
