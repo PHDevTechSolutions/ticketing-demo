@@ -627,61 +627,74 @@ export const Inventory: React.FC<TicketProps> = ({
     return (
         <Card className="w-full p-4 rounded-xl flex flex-col">
             <CardHeader className="p-0 mb-2">
-                <div className="flex items-center justify-between space-x-4">
-                    <Input
-                        placeholder="Search inventory..."
-                        className="text-xs flex-grow max-w-[400px]"
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setPage(1);
-                            setSelectedIds(new Set());
-                        }}
-                    />
+  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    
+    {/* Search */}
+    <Input
+      placeholder="Search inventory..."
+      className="text-xs w-full md:max-w-[400px]"
+      value={search}
+      onChange={(e) => {
+        setSearch(e.target.value);
+        setPage(1);
+        setSelectedIds(new Set());
+      }}
+    />
 
-                    <div className="flex space-x-2 items-center">
-                        {selectedIds.size > 0 && (
-                            <Button variant="destructive" onClick={handleDeleteSelected}>
-                                Delete Selected ({selectedIds.size})
-                            </Button>
-                        )}
-                        <Button
-                            onClick={() => {
-                                resetForm();
-                                setOpen(true);
-                            }}
-                        >
-                            Add New
-                        </Button>
+    {/* Actions */}
+    <div className="flex flex-wrap gap-2 items-center">
+      {selectedIds.size > 0 && (
+        <Button
+          variant="destructive"
+          className="w-full sm:w-auto"
+          onClick={handleDeleteSelected}
+        >
+          Delete Selected ({selectedIds.size})
+        </Button>
+      )}
 
-                        <Button variant="outline" onClick={() => setBulkOpen(true)}>
-                            Bulk Upload
-                        </Button>
+      <Button
+        className="w-full sm:w-auto"
+        onClick={() => {
+          resetForm();
+          setOpen(true);
+        }}
+      >
+        Add New
+      </Button>
 
+      <Button
+        variant="outline"
+        className="w-full sm:w-auto"
+        onClick={() => setBulkOpen(true)}
+      >
+        Bulk Upload
+      </Button>
 
-                        {hasOldItems && (
+      {hasOldItems && (
+        <Button
+          variant="destructive"
+          className="w-full sm:w-auto"
+          onClick={updateOldItemsStatusManual}
+          disabled={updatingOldItems}
+        >
+          {updatingOldItems
+            ? "Updating Old Items..."
+            : "Update Old Items to Dispose"}
+        </Button>
+      )}
 
-                            <Button
-                                variant="destructive"
-                                onClick={updateOldItemsStatusManual}
-                                disabled={updatingOldItems}
-                            >
-                                {updatingOldItems ? "Updating Old Items..." : "Update Old Items to Dispose"}
-                            </Button>
-
-                        )}
-
-                        <InventoryFilterDialog
-                            open={filterSheetOpen}
-                            setOpen={setFilterSheetOpen}
-                            filters={filters}
-                            handleFilterChange={handleFilterChange}
-                            resetFilters={resetFilters}
-                            applyFilters={applyFilters}
-                        />
-                    </div>
-                </div>
-            </CardHeader>
+      <InventoryFilterDialog
+        open={filterSheetOpen}
+        setOpen={setFilterSheetOpen}
+        filters={filters}
+        handleFilterChange={handleFilterChange}
+        resetFilters={resetFilters}
+        applyFilters={applyFilters}
+      />
+    </div>
+  </div>
+</CardHeader>
 
             {loadingActivities ? (
                 <div className="flex justify-center py-10">
