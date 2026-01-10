@@ -249,7 +249,13 @@ export const Assign: React.FC<AssignProps> = ({
 
         return activities.filter((item) => {
             // 🚫 HUWAG IPAKITA KAPAG DISPOSE
-            if (item.status?.toLowerCase() === "dispose" || item.status?.toLowerCase() === "missing" || item.status?.toLowerCase() === "deployed") return false;
+            if (
+                item.status?.toLowerCase() === "dispose" || 
+                item.status?.toLowerCase() === "missing" || 
+                item.status?.toLowerCase() === "deployed" ||
+                item.status?.toLowerCase() === "lend" ||
+                item.status?.toLowerCase() === "defective"
+            ) return false;
 
             const matchesSearch =
                 search.trim() === "" ||
