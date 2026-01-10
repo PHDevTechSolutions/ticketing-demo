@@ -21,13 +21,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea"
 import {
     Dialog,
     DialogContent,
@@ -52,9 +46,6 @@ interface AssignItem {
     remarks?: string;
     date_created?: string;
     status?: string;
-
-    selectedType?: string;
-    quantity?: number;
     fullName?: string;
     position?: string;
     department?: string;
@@ -111,6 +102,7 @@ export const Assign: React.FC<AssignProps> = ({
     const [oldUser, setOldUser] = useState("");
     const [position, setPosition] = useState("");
     const [department, setDepartment] = useState("");
+    const [remarks, setRemarks] = useState("");
 
     const fetchActivities = useCallback(() => {
         if (!referenceid) {
@@ -257,7 +249,7 @@ export const Assign: React.FC<AssignProps> = ({
 
         return activities.filter((item) => {
             // 🚫 HUWAG IPAKITA KAPAG DISPOSE
-            if (item.status?.toLowerCase() === "dispose" || item.status?.toLowerCase() === "missing") return false;
+            if (item.status?.toLowerCase() === "dispose" || item.status?.toLowerCase() === "missing" || item.status?.toLowerCase() === "deployed") return false;
 
             const matchesSearch =
                 search.trim() === "" ||
@@ -308,18 +300,6 @@ export const Assign: React.FC<AssignProps> = ({
         setSelectedItems((prev) => prev.filter((i) => i.id !== id));
     };
 
-    const updateSelectedItem = (
-        id: string,
-        field: keyof AssignItem,
-        value: string | number
-    ) => {
-        setSelectedItems((prev) =>
-            prev.map((item) =>
-                item.id === id ? { ...item, [field]: value } : item
-            )
-        );
-    };
-
     const handleSubmit = async () => {
         if (selectedItems.length === 0) {
             toast.error("No selected items");
@@ -338,6 +318,7 @@ export const Assign: React.FC<AssignProps> = ({
                 old_user: oldUser || null,
                 position,
                 department,
+                remarks,
                 items: selectedItems.map((item) => ({
                     inventory_id: item.id,
                     asset_tag: item.asset_tag,
@@ -345,8 +326,6 @@ export const Assign: React.FC<AssignProps> = ({
                     brand: item.brand,
                     model: item.model,
                     serial_number: item.serial_number,
-                    additional_type: item.selectedType,
-                    quantity: item.quantity,
                 })),
             };
 
@@ -452,17 +431,26 @@ export const Assign: React.FC<AssignProps> = ({
                 {/* LEFT */}
                 <Card className={selectedItems.length > 0 ? "p-4" : "p-4 w-full"}>
                     <CardHeader className="p-0 mb-2">
-                        <Input
-                            placeholder="Search assets..."
-                            className="text-xs"
-                            value={search}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                                setPage(1);
-                            }}
-                        />
-                    </CardHeader>
+                        <div className="flex items-center justify-between gap-2">
+                            {/* Search */}
+                            <Input
+                                placeholder="Search assets..."
+                                className="text-xs max-w-xs"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
+                            />
 
+                            {/* Count */}
+                            <div className="text-xs text-muted-foreground">
+                                <Badge className="px-2 py-2">
+                                    Total Items: {filteredActivities.length}
+                                </Badge>
+                            </div>
+                        </div>
+                    </CardHeader>
                     <CardContent className="p-4">
                         {loadingActivities ? (
                             <div className="flex justify-center py-10">
@@ -480,12 +468,12 @@ export const Assign: React.FC<AssignProps> = ({
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead></TableHead>
+                                            <TableHead>Status</TableHead>
                                             <TableHead>Asset Tag</TableHead>
                                             <TableHead>Type</TableHead>
                                             <TableHead>Brand</TableHead>
                                             <TableHead>Model</TableHead>
                                             <TableHead>Serial</TableHead>
-                                            <TableHead>Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -499,20 +487,12 @@ export const Assign: React.FC<AssignProps> = ({
                                                         Choose
                                                     </Button>
                                                 </TableCell>
+                                                <TableCell><Badge className="text-xs capitalize">{item.status}</Badge></TableCell>
                                                 <TableCell>{item.asset_tag}</TableCell>
                                                 <TableCell>{item.asset_type}</TableCell>
                                                 <TableCell>{item.brand}</TableCell>
                                                 <TableCell>{item.model}</TableCell>
                                                 <TableCell>{item.serial_number}</TableCell>
-                                                <TableCell>
-                                                    <Badge
-
-                                                        className="text-xs capitalize"
-                                                    >
-                                                        {item.status}
-                                                    </Badge>
-                                                </TableCell>
-
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -560,12 +540,6 @@ export const Assign: React.FC<AssignProps> = ({
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Asset Tag</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Brand</TableHead>
-                                        <TableHead>Model</TableHead>
-                                        <TableHead>Serial</TableHead>
-                                        <TableHead>Additional</TableHead>
-                                        <TableHead>QTY</TableHead>
                                         <TableHead className="text-right">Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -574,46 +548,6 @@ export const Assign: React.FC<AssignProps> = ({
                                     {selectedItems.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>{item.asset_tag}</TableCell>
-                                            <TableCell>{item.asset_type}</TableCell>
-                                            <TableCell>{item.brand}</TableCell>
-                                            <TableCell>{item.model}</TableCell>
-                                            <TableCell>{item.serial_number}</TableCell>
-
-                                            {/* Additional (Type) */}
-                                            <TableCell className="w-[160px]">
-                                                <Select
-                                                    value={item.selectedType}
-                                                    onValueChange={(value) =>
-                                                        updateSelectedItem(item.id, "selectedType", value)
-                                                    }
-                                                >
-                                                    <SelectTrigger className="h-8 text-xs">
-                                                        <SelectValue placeholder="Select type" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Mouse">Mouse</SelectItem>
-                                                        <SelectItem value="Keyboard">Keyboard</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-
-                                            {/* Quantity */}
-                                            <TableCell className="w-[90px]">
-                                                <Input
-                                                    type="number"
-                                                    min={1}
-                                                    className="h-8 text-xs"
-                                                    value={item.quantity}
-                                                    onChange={(e) =>
-                                                        updateSelectedItem(
-                                                            item.id,
-                                                            "quantity",
-                                                            Number(e.target.value)
-                                                        )
-                                                    }
-                                                />
-                                            </TableCell>
-
                                             {/* Action */}
                                             <TableCell className="text-right">
                                                 <button
@@ -675,13 +609,23 @@ export const Assign: React.FC<AssignProps> = ({
                                         />
                                     </div>
                                 </div>
+                                <div>
+                                    <label className="block text-xs font-medium mb-1">Remarks</label>
+                                    <Textarea
+                                        rows={2}
+                                        placeholder="Enter old user"
+                                        className="text-xs"
+                                        value={remarks}
+                                        onChange={(e) => setRemarks(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end">
+                                <Button onClick={handleSubmit} disabled={selectedItems.length === 0}>
+                                    Submit Assignment
+                                </Button>
                             </div>
                         </CardContent>
-                        <div className="mt-6 flex justify-end">
-                            <Button onClick={handleSubmit} disabled={selectedItems.length === 0}>
-                                Submit Assignment
-                            </Button>
-                        </div>
                     </Card>
                 )}
             </div>
@@ -800,7 +744,6 @@ export const Assign: React.FC<AssignProps> = ({
                                                     item.department
                                                 )}
                                             </TableCell>
-
                                             <TableCell>
                                                 {item.date_created
                                                     ? new Date(item.date_created).toLocaleString(undefined, {

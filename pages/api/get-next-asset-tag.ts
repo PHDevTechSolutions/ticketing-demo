@@ -1,10 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { connectToDatabase } from "@/lib/mongodb";
+import { supabase } from "../../utils/supabase";
 
 const prefixMap: Record<string, string> = {
-  Laptop: "LAP",
-  Monitor: "MON",
-  Desktop: "DES",
+  LAPTOP: "LAP",
+  MONITOR: "MON",
+  DESKTOP: "DES",
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -19,35 +19,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const db = await connectToDatabase();
     const prefix = prefixMap[asset_type];
     const year = new Date().getFullYear();
 
-    // Regex pattern for matching asset tags like LAP-2025-001
-    const regex = new RegExp(`^${prefix}-${year}-(\\d{3})$`);
+    console.log(`Generating next asset tag for asset_type=${asset_type}, prefix=${prefix}, year=${year}`);
 
-    // Find all asset_tags for this type/year
-    const items = await db
-      .collection("inventory")
-      .find({ asset_tag: { $regex: regex } })
-      .toArray();
+    // Regex pattern to match tags like LAP-2026-001
+    const pattern = `^${prefix}-${year}-(\\d{3})$`;
+    const regex = new RegExp(pattern);
 
-    // Extract sequence numbers, find max
-    const seqNumbers = items
+    // Query Supabase for asset_tags starting with prefix-year-
+    const { data, error } = await supabase
+      .from("inventory")
+      .select("asset_tag")
+      .ilike("asset_tag", `${prefix}-${year}-%`);
+
+    if (error) {
+      console.error("Supabase query error:", error);
+      return res.status(500).json({ error: "Error querying inventory" });
+    }
+
+    if (!data || data.length === 0) {
+      console.log("No existing asset tags found for this prefix and year.");
+    } else {
+      console.log(`Found ${data.length} asset tags matching prefix-year.`);
+    }
+
+    const seqNumbers = data
       .map((item) => {
-        const match = item.asset_tag?.match(regex);
-        return match ? parseInt(match[1], 10) : 0;
+        if (!item.asset_tag) return NaN;
+        const match = item.asset_tag.match(regex);
+        return match ? parseInt(match[1], 10) : NaN;
       })
       .filter((n) => !isNaN(n));
 
     const maxSeq = seqNumbers.length > 0 ? Math.max(...seqNumbers) : 0;
     const nextSeq = (maxSeq + 1).toString().padStart(3, "0");
-
     const nextAssetTag = `${prefix}-${year}-${nextSeq}`;
 
-    res.status(200).json({ asset_tag: nextAssetTag });
+    console.log(`Next asset tag generated: ${nextAssetTag}`);
+
+    return res.status(200).json({ asset_tag: nextAssetTag });
   } catch (error) {
     console.error("Error generating next asset tag:", error);
-    res.status(500).json({ error: "Server error generating asset tag" });
+    return res.status(500).json({ error: "Server error generating asset tag" });
   }
 }

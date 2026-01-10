@@ -48,13 +48,52 @@ const statusMeta: Record<
     description:
       "IT equipments and devices that are marked for disposal, recycling, or decommissioning.",
     link: "/asset/disposal",
-    linkLabel: "View Dispose",
+    linkLabel: "View Disposed",
   },
 };
 
 export function StatusCard({ counts, userId }: StatusCardProps) {
+  /** ✅ TOTAL NG LAHAT NG ITEMS (NO FILTER) */
+  const grandTotal = Object.values(counts).reduce(
+    (sum, value) => sum + value,
+    0
+  );
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+      {/* ✅ ALL ASSETS CARD */}
+      <Card className="flex flex-col justify-between border-primary">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">
+            All Assets
+          </CardTitle>
+          <CardDescription>
+            Total number of all IT assets regardless of status.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex items-center justify-between font-semibold">
+          <span>
+            {grandTotal === 0 ? "No items" : `Total ${grandTotal} items`}
+          </span>
+
+          <Badge className="h-9 min-w-[2.5rem] rounded-full px-3 text-base font-mono">
+            {grandTotal}
+          </Badge>
+        </CardContent>
+
+        <Separator />
+
+        <CardFooter className="flex justify-end">
+          <Button variant="outline" asChild>
+            <a href={`/asset/inventory?id=${encodeURIComponent(userId ?? "")}`}>
+              View All
+            </a>
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* ✅ PER STATUS CARDS */}
       {Object.keys(statusMeta).map((status) => {
         const meta = statusMeta[status];
         const total = counts[status] ?? 0;

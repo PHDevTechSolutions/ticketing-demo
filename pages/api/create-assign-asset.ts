@@ -22,6 +22,7 @@ export default async function handler(
         old_user,
         position,
         department,
+        remarks,
         items,
     } = req.body;
 
@@ -46,8 +47,7 @@ export default async function handler(
                     brand: item.brand,
                     model: item.model,
                     serial_number: item.serial_number,
-                    additional_type: item.additional_type,
-                    quantity: item.quantity,
+                    remarks,
                     new_user,
                     old_user,
                     position,

@@ -44,6 +44,18 @@ interface InventoryItem {
     date_created?: string;
 }
 
+type InventoryFilters = {
+    status: string;
+    location: string;
+    asset_type: string;
+    department: string;
+    brand: string;
+    model: string;
+    processor: string;
+    storage: string;
+    pageSize: string;
+};
+
 interface TicketProps {
     referenceid: string;
     dateCreatedFilterRange: DateRange | undefined;
@@ -60,8 +72,6 @@ const statusColors: Record<string, string> = {
     Defective: "bg-red-100 text-red-800",
     Dispose: "bg-gray-200 text-gray-800",
 };
-
-const PAGE_SIZE = 10;
 
 export const Inventory: React.FC<TicketProps> = ({
     referenceid,
@@ -107,7 +117,7 @@ export const Inventory: React.FC<TicketProps> = ({
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<InventoryFilters>({
         status: "",
         location: "",
         asset_type: "",
@@ -116,6 +126,7 @@ export const Inventory: React.FC<TicketProps> = ({
         model: "",
         processor: "",
         storage: "",
+        pageSize: "25",
     });
 
     const [hasOldItems, setHasOldItems] = useState(false);
@@ -126,9 +137,15 @@ export const Inventory: React.FC<TicketProps> = ({
     const [bulkFile, setBulkFile] = useState<File | null>(null);
     const [bulkReferenceId, setBulkReferenceId] = useState(referenceid);
 
+    const pageSize = useMemo(() => {
+        const size = Number(filters.pageSize);
+        return Number.isFinite(size) && size > 0 ? size : 25;
+    }, [filters.pageSize]);
+
+
     useEffect(() => {
-    setBulkReferenceId(referenceid);
-  }, [referenceid]);
+        setBulkReferenceId(referenceid);
+    }, [referenceid]);
 
     const [uploadingBulk, setUploadingBulk] = useState(false);
 
@@ -179,7 +196,6 @@ export const Inventory: React.FC<TicketProps> = ({
             .catch((err) => setErrorActivities(err.message))
             .finally(() => setLoadingActivities(false));
     }, [referenceid]);
-
 
     useEffect(() => {
         fetchActivities();
@@ -239,7 +255,9 @@ export const Inventory: React.FC<TicketProps> = ({
             model: "",
             processor: "",
             storage: "",
+            pageSize: "25", // 👈 default
         });
+        setPage(1);
     }
 
     function applyFilters() {
@@ -263,7 +281,8 @@ export const Inventory: React.FC<TicketProps> = ({
             endDate.setHours(23, 59, 59, 999);
         }
 
-        return activities.filter((item) => {
+        // Filter first
+        const filtered = activities.filter((item) => {
             // EXCLUDE items with status "Dispose"
             if (item.status === "Dispose") return false;
 
@@ -277,6 +296,8 @@ export const Inventory: React.FC<TicketProps> = ({
 
             const matchesFilters = Object.entries(filters).every(([key, filterValue]) => {
                 if (!filterValue) return true;
+                if (key === "pageSize") return true; // 👈 IMPORTANT
+
                 const itemValue = item[key as keyof InventoryItem];
                 return (
                     itemValue
@@ -300,15 +321,23 @@ export const Inventory: React.FC<TicketProps> = ({
 
             return true;
         });
+
+        // Sort descending by asset_tag
+        filtered.sort((a, b) => {
+            if (!a.asset_tag) return 1;   // Push undefined asset_tag to the end
+            if (!b.asset_tag) return -1;
+            return b.asset_tag.localeCompare(a.asset_tag);
+        });
+
+        return filtered;
     }, [activities, search, filters, dateCreatedFilterRange]);
 
-
-    const pageCount = Math.ceil(filteredActivities.length / PAGE_SIZE);
+    const pageCount = Math.ceil(filteredActivities.length / pageSize);
 
     const paginatedActivities = useMemo(() => {
-        const start = (page - 1) * PAGE_SIZE;
-        return filteredActivities.slice(start, start + PAGE_SIZE);
-    }, [filteredActivities, page]);
+        const start = (page - 1) * pageSize;
+        return filteredActivities.slice(start, start + pageSize);
+    }, [filteredActivities, page, pageSize]);
 
     function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value } = e.target;
@@ -402,8 +431,6 @@ export const Inventory: React.FC<TicketProps> = ({
     function openEditDialog(item: InventoryItem) {
         setEditingId(item.id);
         setForm({
-            asset_tag: item.asset_tag ?? "",
-            asset_type: item.asset_type ?? "",
             status: item.status,
             location: item.location ?? "",
             new_user: item.new_user ?? "",
@@ -598,6 +625,79 @@ export const Inventory: React.FC<TicketProps> = ({
         }
     };
 
+    useEffect(() => {
+        setPage(1);
+    }, [pageSize]);
+
+    function convertToCSV(items: InventoryItem[]) {
+        if (items.length === 0) return "";
+
+        const headers = [
+            "id",
+            "referenceid",
+            "asset_tag",
+            "asset_type",
+            "status",
+            "location",
+            "new_user",
+            "old_user",
+            "department",
+            "position",
+            "brand",
+            "model",
+            "processor",
+            "ram",
+            "storage",
+            "serial_number",
+            "purchase_date",
+            "warranty_date",
+            "asset_age",
+            "amount",
+            "remarks",
+            "mac_address",
+            "date_created",
+        ];
+
+        const escapeCSV = (value: any) => {
+            if (value == null) return "";
+            const str = value.toString();
+            if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+                return `"${str.replace(/"/g, '""')}"`; // escape double quotes
+            }
+            return str;
+        };
+
+        const csvRows = [
+            headers.join(","), // header row
+            ...items.map((item) =>
+                headers.map((header) => escapeCSV(item[header as keyof InventoryItem])).join(",")
+            ),
+        ];
+
+        return csvRows.join("\n");
+    }
+
+    function handleDownloadCSV() {
+        // Use activities or filteredActivities as needed
+        const csv = convertToCSV(activities); // or filteredActivities for filtered data
+        if (!csv) {
+            toast.error("No data available to download");
+            return;
+        }
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `inventory_export_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+
     if (errorActivities) {
         return (
             <Alert variant="destructive" className="flex flex-col space-y-4 p-4 text-xs">
@@ -627,74 +727,78 @@ export const Inventory: React.FC<TicketProps> = ({
     return (
         <Card className="w-full p-4 rounded-xl flex flex-col">
             <CardHeader className="p-0 mb-2">
-  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-    
-    {/* Search */}
-    <Input
-      placeholder="Search inventory..."
-      className="text-xs w-full md:max-w-[400px]"
-      value={search}
-      onChange={(e) => {
-        setSearch(e.target.value);
-        setPage(1);
-        setSelectedIds(new Set());
-      }}
-    />
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 
-    {/* Actions */}
-    <div className="flex flex-wrap gap-2 items-center">
-      {selectedIds.size > 0 && (
-        <Button
-          variant="destructive"
-          className="w-full sm:w-auto"
-          onClick={handleDeleteSelected}
-        >
-          Delete Selected ({selectedIds.size})
-        </Button>
-      )}
+                    {/* Search */}
+                    <div className="flex items-center justify-between mb-4 gap-2">
+                        <Input
+                            type="search"
+                            placeholder="Search..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="max-w-sm"
+                        />
 
-      <Button
-        className="w-full sm:w-auto"
-        onClick={() => {
-          resetForm();
-          setOpen(true);
-        }}
-      >
-        Add New
-      </Button>
+                        <Button onClick={handleDownloadCSV} variant="outline">
+                            Download CSV
+                        </Button>
+                    </div>
 
-      <Button
-        variant="outline"
-        className="w-full sm:w-auto"
-        onClick={() => setBulkOpen(true)}
-      >
-        Bulk Upload
-      </Button>
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2 items-center">
+                        {selectedIds.size > 0 && (
+                            <Button
+                                variant="destructive"
+                                className="w-full sm:w-auto"
+                                onClick={handleDeleteSelected}
+                            >
+                                Delete Selected ({selectedIds.size})
+                            </Button>
+                        )}
 
-      {hasOldItems && (
-        <Button
-          variant="destructive"
-          className="w-full sm:w-auto"
-          onClick={updateOldItemsStatusManual}
-          disabled={updatingOldItems}
-        >
-          {updatingOldItems
-            ? "Updating Old Items..."
-            : "Update Old Items to Dispose"}
-        </Button>
-      )}
+                        <Button
+                            className="w-full sm:w-auto"
+                            onClick={() => {
+                                resetForm();
+                                setOpen(true);
+                            }}
+                        >
+                            Add New
+                        </Button>
 
-      <InventoryFilterDialog
-        open={filterSheetOpen}
-        setOpen={setFilterSheetOpen}
-        filters={filters}
-        handleFilterChange={handleFilterChange}
-        resetFilters={resetFilters}
-        applyFilters={applyFilters}
-      />
-    </div>
-  </div>
-</CardHeader>
+                        <Button
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            onClick={() => setBulkOpen(true)}
+                        >
+                            Bulk Upload
+                        </Button>
+
+                        {hasOldItems && (
+                            <Button
+                                variant="destructive"
+                                className="w-full sm:w-auto"
+                                onClick={updateOldItemsStatusManual}
+                                disabled={updatingOldItems}
+                            >
+                                {updatingOldItems
+                                    ? "Updating Old Items..."
+                                    : "Update Old Items to Dispose"}
+                            </Button>
+                        )}
+
+                        <InventoryFilterDialog
+                            open={filterSheetOpen}
+                            setOpen={setFilterSheetOpen}
+                            filters={filters}
+                            setFilters={setFilters}
+                            handleFilterChange={handleFilterChange}
+                            resetFilters={resetFilters}
+                            applyFilters={applyFilters}
+                        />
+                    </div>
+                </div>
+            </CardHeader>
 
             {loadingActivities ? (
                 <div className="flex justify-center py-10">
@@ -860,7 +964,7 @@ export const Inventory: React.FC<TicketProps> = ({
                                 type="file"
                                 accept=".csv"
                                 onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
-                                
+
                             />
                         </div>
                     </div>

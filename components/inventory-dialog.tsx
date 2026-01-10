@@ -33,37 +33,38 @@ export const InventoryDialog: React.FC<InventoryDialogProps> = ({
     resetForm,
 }) => {
     // Options arrays
-    const assetTypeOptions = ["Laptop", "Monitor", "Desktop"];
+    const assetTypeOptions = ["LAPTOP", "MONITOR", "DESKTOP"];
     const statusOptions = [
-        "Spare",
-        "Deployed",
-        "Lend",
-        "Missing",
-        "Defective",
-        "Dispose",
+        "SPARE",
+        "DEPLOYED",
+        "LEND",
+        "MISSING",
+        "DEFECTIVE",
+        "DISPOSE",
     ];
     const locationOptions = [
         "J&L",
-        "Primex",
-        "Pasig Warehouse",
+        "PRIMEX",
+        "PASIG WH",
         "CDO",
-        "Cebu",
-        "Davao",
-        "Builchem",
-        "Disruptive",
+        "CEBU",
+        "DAVAO",
+        "BUILDCHEM",
+        "DISRUPTIVE",
     ];
     const departmentOptions = [
-        "Human Resources",
-        "Information Technology",
-        "Marketing",
-        "Sales",
-        "Accounting",
-        "Procurement",
-        "Admin",
-        "Warehouse Operations",
-        "Engineering",
-        "Customer Service",
-        "Ecommerce",
+        "HUMAN RESOURCES",
+        "INFORMATION TECHNOLOGY",
+        "MARKETING",
+        "SALES",
+        "ACCOUNTING",
+        "PROCUREMENT",
+        "ADMIN",
+        "WAREHOUSE OPERATIONS",
+        "ENGINEERING",
+        "CUSTOMER SERVICE",
+        "ECOMMERCE",
+        "PRODUCT DEVELOPMENT"
     ];
 
     const [isLoadingAssetTag, setIsLoadingAssetTag] = useState(false);
@@ -91,7 +92,6 @@ export const InventoryDialog: React.FC<InventoryDialogProps> = ({
         }
 
         fetchNextAssetTag();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.asset_type]);
 
     useEffect(() => {
@@ -190,45 +190,50 @@ export const InventoryDialog: React.FC<InventoryDialogProps> = ({
 
                 <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-auto pr-2">
                     {/* Asset Tag */}
-                    <div className="flex flex-col">
-                        <label htmlFor="asset_tag" className="mb-1 text-xs font-medium">
-                            Asset Tag <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            id="asset_tag"
-                            name="asset_tag"
-                            value={isLoadingAssetTag ? "Generating..." : form.asset_tag || ""}
-                            onChange={handleInputChange}
-                            placeholder="Asset Tag"
-                            type="text"
-                            disabled
-                        />
-                    </div>
+                    {!editingId && (
+                        <>
+                            {/* Asset Tag */}
+                            <div className="flex flex-col">
+                                <label htmlFor="asset_tag" className="mb-1 text-xs font-medium">
+                                    Asset Tag <span className="text-red-500">*</span>
+                                </label>
+                                <Input
+                                    id="asset_tag"
+                                    name="asset_tag"
+                                    value={isLoadingAssetTag ? "Generating..." : form.asset_tag || ""}
+                                    onChange={handleInputChange}
+                                    placeholder="Asset Tag"
+                                    type="text"
+                                    disabled
+                                />
+                            </div>
 
-                    {/* Asset Type (Select) */}
-                    <div className="flex flex-col">
-                        <label htmlFor="asset_type" className="mb-1 text-xs font-medium">
-                            Asset Type
-                        </label>
-                        <Select
-                            value={form.asset_type || ""}
-                            onValueChange={(value) => handleSelectChange("asset_type", value)}
-                        >
-                            <SelectTrigger id="asset_type" className="w-full">
-                                <SelectValue placeholder="Select asset type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectLabel>Asset Type</SelectLabel>
-                                    {assetTypeOptions.map((option) => (
-                                        <SelectItem key={option} value={option}>
-                                            {option}
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                            {/* Asset Type (Select) */}
+                            <div className="flex flex-col">
+                                <label htmlFor="asset_type" className="mb-1 text-xs font-medium">
+                                    Asset Type
+                                </label>
+                                <Select
+                                    value={form.asset_type || ""}
+                                    onValueChange={(value) => handleSelectChange("asset_type", value)}
+                                >
+                                    <SelectTrigger id="asset_type" className="w-full">
+                                        <SelectValue placeholder="Select asset type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Asset Type</SelectLabel>
+                                            {assetTypeOptions.map((option) => (
+                                                <SelectItem key={option} value={option}>
+                                                    {option}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </>
+                    )}
 
                     {/* Status (Select, required) */}
                     <div className="flex flex-col">
