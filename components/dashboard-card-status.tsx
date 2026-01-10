@@ -50,23 +50,34 @@ const statusMeta: Record<
     link: "/asset/disposal",
     linkLabel: "View Disposed",
   },
+  lend: {
+    title: "Lend",
+    description:
+      "IT equipments and devices currently lent out to users or departments temporarily.",
+    link: "/asset/inventory",
+    linkLabel: "View Lend",
+  },
+  defective: {
+    title: "Defective",
+    description:
+      "IT equipments and devices that are malfunctioning and need repair or replacement.",
+    link: "/asset/inventory",
+    linkLabel: "View Defective",
+  },
 };
 
 export function StatusCard({ counts, userId }: StatusCardProps) {
-  /** ✅ TOTAL NG LAHAT NG ITEMS (NO FILTER) */
   const grandTotal = Object.values(counts).reduce(
     (sum, value) => sum + value,
     0
   );
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-      {/* ✅ ALL ASSETS CARD */}
-      <Card className="flex flex-col justify-between border-primary">
+    <div className="grid grid-cols-4 gap-4">
+      {/* ALL ASSETS CARD */}
+      <Card className="flex flex-col justify-between border-primary col-span-2">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">
-            All Assets
-          </CardTitle>
+          <CardTitle className="text-lg font-semibold">All Assets</CardTitle>
           <CardDescription>
             Total number of all IT assets regardless of status.
           </CardDescription>
@@ -93,24 +104,23 @@ export function StatusCard({ counts, userId }: StatusCardProps) {
         </CardFooter>
       </Card>
 
-      {/* ✅ PER STATUS CARDS */}
+      {/* PER STATUS CARDS */}
       {Object.keys(statusMeta).map((status) => {
         const meta = statusMeta[status];
         const total = counts[status] ?? 0;
 
         return (
-          <Card key={status} className="flex flex-col justify-between">
+          <Card
+            key={status}
+            className="flex flex-col justify-between col-span-1"
+          >
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">
-                {meta.title}
-              </CardTitle>
+              <CardTitle className="text-lg font-semibold">{meta.title}</CardTitle>
               <CardDescription>{meta.description}</CardDescription>
             </CardHeader>
 
             <CardContent className="flex items-center justify-between font-semibold">
-              <span>
-                {total === 0 ? "No items" : `Total ${total} items`}
-              </span>
+              <span>{total === 0 ? "No items" : `Total ${total} items`}</span>
 
               <Badge className="h-8 min-w-[2rem] rounded-full px-2 font-mono tabular-nums">
                 {total}
