@@ -332,6 +332,10 @@ export const Inventory: React.FC<TicketProps> = ({
         return filtered;
     }, [activities, search, filters, dateCreatedFilterRange]);
 
+    const totalSpareCount = useMemo(() => {
+        return filteredActivities.length;
+    }, [filteredActivities]);
+
     const pageCount = Math.ceil(filteredActivities.length / pageSize);
 
     const paginatedActivities = useMemo(() => {
@@ -746,6 +750,11 @@ export const Inventory: React.FC<TicketProps> = ({
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-2 items-center">
+                        <p className="font-semibold">Total Assets ( Except Dispose Item ):</p>
+                        <Badge className="bg-green-600 text-white py-2 px-4 text-sm">
+                             {totalSpareCount}
+                        </Badge>
+
                         {selectedIds.size > 0 && (
                             <Button
                                 variant="destructive"
