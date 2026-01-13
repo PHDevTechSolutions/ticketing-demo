@@ -37,7 +37,7 @@ import { toast } from "sonner";
 import { InventoryFilterDialog } from "@/components/inventory-filter-dialog";
 import { supabase } from "@/utils/supabase";
 
-interface DisposeItem {
+interface Item {
     id: string; // supabase id
     referenceid: string;
     asset_tag?: string;
@@ -82,11 +82,11 @@ const statusColors: Record<string, string> = {
 
 const PAGE_SIZE = 10;
 
-export const Disposal: React.FC<TicketProps> = ({
+export const Deployed: React.FC<TicketProps> = ({
     referenceid,
     dateCreatedFilterRange,
 }) => {
-    const [activities, setActivities] = useState<DisposeItem[]>([]);
+    const [activities, setActivities] = useState<Item[]>([]);
     const [loadingActivities, setLoadingActivities] = useState(false);
     const [errorActivities, setErrorActivities] = useState<string | null>(null);
 
@@ -128,7 +128,7 @@ export const Disposal: React.FC<TicketProps> = ({
                 return res.json();
             })
             .then((data) => {
-                const items: DisposeItem[] = data.data || [];
+                const items: Item[] = data.data || [];
                 setActivities(items);
             })
             .catch((err) => setErrorActivities(err.message))
@@ -152,8 +152,8 @@ export const Disposal: React.FC<TicketProps> = ({
                     filter: `referenceid=eq.${referenceid}`,
                 },
                 (payload) => {
-                    const newRecord = payload.new as DisposeItem;
-                    const oldRecord = payload.old as DisposeItem;
+                    const newRecord = payload.new as Item;
+                    const oldRecord = payload.old as Item;
 
                     setActivities((curr) => {
                         switch (payload.eventType) {
@@ -222,7 +222,7 @@ export const Disposal: React.FC<TicketProps> = ({
         // Filter first
         const filtered = activities.filter((item) => {
             // EXCLUDE items with status "Dispose"
-            if (item.status !== "Dispose") return false;
+            if (item.status !== "DEPLOYED") return false;
 
             const matchesSearch =
                 search.trim() === "" ||
@@ -236,7 +236,7 @@ export const Disposal: React.FC<TicketProps> = ({
                 if (!filterValue) return true;
                 if (key === "pageSize") return true; // 👈 IMPORTANT
 
-                const itemValue = item[key as keyof DisposeItem];
+                const itemValue = item[key as keyof Item];
                 return (
                     itemValue
                         ?.toString()
@@ -270,9 +270,10 @@ export const Disposal: React.FC<TicketProps> = ({
         return filtered;
     }, [activities, search, filters, dateCreatedFilterRange]);
 
-    const totalDisposeCount = useMemo(() => {
+    const totalSpareCount = useMemo(() => {
         return filteredActivities.length;
     }, [filteredActivities]);
+
     const pageCount = Math.ceil(filteredActivities.length / pageSize);
 
     const paginatedActivities = useMemo(() => {
@@ -365,8 +366,9 @@ export const Disposal: React.FC<TicketProps> = ({
 
     return (
         <Card className="w-full p-4 rounded-xl flex flex-col">
-            <CardHeader className="p-0 mb-2">
-                <div className="flex items-center justify-between space-x-4">
+            <CardHeader className="p-0 mb-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    {/* LEFT */}
                     <Input
                         placeholder="Search inventory..."
                         className="text-xs flex-grow max-w-[400px]"
@@ -378,12 +380,12 @@ export const Disposal: React.FC<TicketProps> = ({
                         }}
                     />
 
-                    <div className="flex space-x-2 items-center">
-
-                        <Badge variant="destructive" className="py-2 px-4 text-sm">
-                            Total: {totalDisposeCount}
+                    {/* RIGHT */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* TOTAL SPARE BADGE */}
+                        <Badge className="bg-blue-600 text-white py-2 px-4 text-sm">
+                            Total: {totalSpareCount}
                         </Badge>
-
 
                         {selectedIds.size > 0 && (
                             <Button variant="destructive" onClick={handleDeleteSelected}>
@@ -403,6 +405,7 @@ export const Disposal: React.FC<TicketProps> = ({
                     </div>
                 </div>
             </CardHeader>
+
 
             {loadingActivities ? (
                 <div className="flex justify-center py-10">

@@ -26,21 +26,21 @@ const statusMeta: Record<
     title: "Spare",
     description:
       "Available IT equipments and devices that are ready for deployment or replacement.",
-    link: "/asset/inventory",
+    link: "/asset/spare",
     linkLabel: "View Spare",
   },
   deployed: {
     title: "Deployed",
     description:
       "IT equipments and devices currently assigned and actively used by users or departments.",
-    link: "/asset/inventory",
+    link: "/asset/deployed",
     linkLabel: "View Deployed",
   },
   missing: {
     title: "Missing",
     description:
       "IT equipments and devices that are unaccounted for and require investigation or reporting.",
-    link: "/asset/inventory",
+    link: "/asset/missing",
     linkLabel: "View Missing",
   },
   dispose: {
@@ -54,14 +54,14 @@ const statusMeta: Record<
     title: "Lend",
     description:
       "IT equipments and devices currently lent out to users or departments temporarily.",
-    link: "/asset/inventory",
+    link: "/asset/lend",
     linkLabel: "View Lend",
   },
   defective: {
     title: "Defective",
     description:
       "IT equipments and devices that are malfunctioning and need repair or replacement.",
-    link: "/asset/inventory",
+    link: "/asset/defective",
     linkLabel: "View Defective",
   },
 };
