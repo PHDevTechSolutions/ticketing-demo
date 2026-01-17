@@ -64,8 +64,6 @@ export function StatusCard({ counts }: StatusCardProps) {
             {grandTotal}
           </Badge>
         </CardContent>
-
-        <Separator />
       </Card>
 
       {/* PER STATUS CARDS */}
@@ -90,8 +88,6 @@ export function StatusCard({ counts }: StatusCardProps) {
                 {total}
               </Badge>
             </CardContent>
-
-            <Separator />
           </Card>
         );
       })}
