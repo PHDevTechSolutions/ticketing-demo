@@ -12,8 +12,8 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarRail, } from "@/componen
 const initialUserDetails = {
   Firstname: "Itams",
   Lastname: "IT",
-  Email: "itams@disruptivesolutions.com",
-  Department: "disruptivesolutions.com",
+  Email: "it.ticketing@disruptivesolutionsinc.com",
+  Department: "IT Department",
   Location: "Philippines",
   Role: "Admin",
   Position: "",
@@ -28,39 +28,17 @@ const data = {
   favorites: [{ name: "Dashboard", url: "/dashboard", icon: Gauge, isActive: true }],
   workspaces: [
     {
-      name: "Asset Management",
+      name: "Tickets",
       icon: FolderKanban,
       // Remove icons here from pages
       pages: [
-        { name: "Inventory", url: "/asset/inventory" },
-        { name: "Assign Assets", url: "/asset/assign" },
-        { name: "Disposal", url: "/asset/disposal" },
-        { name: "License", url: "/asset/license" },
-        { name: "Warranty", url: "/asset/warranty" },
+        { name: "Receiving Tickets", url: "/tickets/received" },
       ],
     },
     {
-      // Combine Maintenance, Audit Logs, History Logs into one single item (no submenu, no caret)
-      name: "Maintenance",
-      icon: Cog,
-      // Single page, no nested pages or caret
-      pages: [
-        {
-          name: "Maintenance, Audit & History Logs",
-          url: "/taskflow/obc",
-          icon: PhoneCall,
-        },
-      ],
-    },
-    {
-      name: "Audit Logs",
+      name: "Service Catalogue",
       icon: FolderCheck,
-      pages: [{ name: "Audit Logs", url: "/taskflow/audit-logs" }],
-    },
-    {
-      name: "History Logs",
-      icon: Clock,
-      pages: [{ name: "History Logs", url: "/taskflow/history-logs" }],
+      pages: [{ name: "Audit Logs", url: "/catalogue/services" }],
     },
   ],
 };
@@ -122,7 +100,7 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
           ...page,
           url: withUserId(page.url),
           // Remove icon for Asset Management pages only
-          ...(workspace.name === "Asset Management" ? { icon: undefined } : {}),
+          ...(workspace.name === "Tickets" ? { icon: undefined } : {}),
         })),
       })),
     [withUserId]

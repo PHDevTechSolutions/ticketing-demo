@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 export const metadata: Metadata = {
-  title: "Stash - IT Asset Management System",
-  description: "Localized IT Asset Management System built with Next.js and Tailwind CSS",
+  title: "Help Desk - IT Ticketing System",
+  description: "Localized IT IT Ticketing System built with Next.js and Tailwind CSS",
   icons: {
     icon: "/stash-mini-darkmode.png",
   },
@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-mono antialiased`}>
         <UserProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <Reminders />

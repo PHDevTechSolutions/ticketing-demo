@@ -125,16 +125,6 @@ export function SidebarRight({
           selectedDateRange={dateCreatedFilterRange}
           onDateSelectAction={handleDateRangeSelect}
         />
-
-        <SidebarSeparator className="mx-0" />
-
-        <Card className="rounded-xs shadow-none border-0">
-          <CardContent>
-            <Meeting
-              referenceid={userDetails.ReferenceID}
-            />
-          </CardContent>
-        </Card>
       </SidebarContent>
 
       <SidebarFooter>

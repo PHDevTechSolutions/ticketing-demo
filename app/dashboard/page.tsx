@@ -17,53 +17,27 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemFooter,
-  ItemHeader,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item"
-import { Separator } from "@/components/ui/separator"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 import { type DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { supabase } from "@/utils/supabase";
 
-import { StatusCard } from "@/components/dashboard-card-status";
-import { AssetCard } from "@/components/dashboard-card-asset_type";
-import { BrandCard } from "@/components/dashboard-card-brand";
+import { StatusCard } from "@/components/dashboard/dashboard-card-status";
 
-interface InventoryItem {
+interface RequestItem {
   id: string; // supabase id
   status: string;
-  asset_tag: string;
-  asset_type: string;
-  model: string;
-  brand: string;
-  location: string;
+  request_type: string;
+  type_concern: string;
+  technician_name: string;
+  site: string;
+  ticket_id: string;
+  ticket_subject: string;
+  remarks: string;
+  priority: string;
   date_created?: string;
-  warranty_date: string;
 }
 
 interface UserDetails {
@@ -78,7 +52,7 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const { userId, setUserId } = useUser();
 
-  const [activities, setActivities] = useState<InventoryItem[]>([]);
+  const [activities, setActivities] = useState<RequestItem[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [errorActivities, setErrorActivities] = useState<string | null>(null);
 
@@ -136,50 +110,46 @@ function DashboardContent() {
     fetchUserData();
   }, [userId]);
 
-  // Use referenceid from fetched userDetails (not directly from URL)
-  const referenceid = userDetails.referenceid;
-
-  // Fetch activities
-  const fetchActivities = useCallback(() => {
-    if (!referenceid) {
-      setActivities([]);
-      return;
-    }
+  // Fetch all tickets without referenceid filter
+  const fetchActivities = useCallback(async () => {
     setLoadingActivities(true);
     setErrorActivities(null);
 
-    fetch(`/api/fetch-inventory?referenceid=${encodeURIComponent(referenceid)}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch activities");
-        return res.json();
-      })
-      .then((data) => {
-        const items: InventoryItem[] = data.data || [];
-        setActivities(items);
-      })
-      .catch((err) => setErrorActivities(err.message))
-      .finally(() => setLoadingActivities(false));
-  }, [referenceid]);
+    try {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("*")
+        .order("date_created", { ascending: false });
+
+      if (error) throw error;
+
+      setActivities(data ?? []);
+    } catch (error: any) {
+      setErrorActivities(error.message || "Error fetching tickets");
+      toast.error(error.message || "Error fetching tickets");
+    } finally {
+      setLoadingActivities(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchActivities();
+  }, [fetchActivities]);
 
-    if (!referenceid) return;
-
-    // Supabase realtime subscription
+  // Subscribe to all tickets changes (no referenceid filter)
+  useEffect(() => {
     const channel = supabase
-      .channel(`inventory-${referenceid}`)
+      .channel(`public:tickets`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "inventory",
-          filter: `referenceid=eq.${referenceid}`,
+          table: "tickets",
         },
         (payload) => {
-          const newRecord = payload.new as InventoryItem;
-          const oldRecord = payload.old as InventoryItem;
+          const newRecord = payload.new as RequestItem;
+          const oldRecord = payload.old as RequestItem;
 
           setActivities((curr) => {
             switch (payload.eventType) {
@@ -203,86 +173,83 @@ function DashboardContent() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [referenceid, fetchActivities]);
+  }, []);
 
-  // Count items by status
+  // Helper: safely parse date string
+  function parseDate(dateStr?: string) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // Filter activities based on dateCreatedFilterRange
+  const filteredActivities = React.useMemo(() => {
+    if (
+      !dateCreatedFilterRange ||
+      (!dateCreatedFilterRange.from && !dateCreatedFilterRange.to)
+    ) {
+      return activities;
+    }
+
+    const fromTime = dateCreatedFilterRange.from
+      ? dateCreatedFilterRange.from.getTime()
+      : -Infinity;
+
+    const toTime = dateCreatedFilterRange.to
+      ? new Date(
+        dateCreatedFilterRange.to.getFullYear(),
+        dateCreatedFilterRange.to.getMonth(),
+        dateCreatedFilterRange.to.getDate(),
+        23,
+        59,
+        59,
+        999
+      ).getTime()
+      : Infinity;
+
+    return activities.filter((item) => {
+      const date = parseDate(item.date_created);
+      if (!date) return false;
+      const time = date.getTime();
+      return time >= fromTime && time <= toTime;
+    });
+  }, [activities, dateCreatedFilterRange]);
+
+  // Count items by status using filteredActivities
   const counts = React.useMemo(() => {
     const normalize = (status?: string) => status?.toLowerCase() ?? "";
 
-    const countSpare = activities.filter(
-      (item) => normalize(item.status) === "spare"
-    ).length;
-
-    const countDeploy = activities.filter(
-      (item) => normalize(item.status) === "deployed"
-    ).length;
-
-    const countMissing = activities.filter(
-      (item) => normalize(item.status) === "missing"
-    ).length;
-
-    const countDispose = activities.filter(
-      (item) => normalize(item.status) === "dispose"
-    ).length;
-
-    const countLend = activities.filter(
-      (item) => normalize(item.status) === "lend"
-    ).length;
-
-    const countDefective = activities.filter(
-      (item) => normalize(item.status) === "defective"
-    ).length;
-
     return {
-      spare: countSpare,
-      deployed: countDeploy,
-      missing: countMissing,
-      dispose: countDispose,
-      lend: countLend,
-      defective: countDefective,
+      resolved: filteredActivities.filter(
+        (item) => normalize(item.status) === "resolved"
+      ).length,
+      ongoing: filteredActivities.filter(
+        (item) => normalize(item.status) === "ongoing"
+      ).length,
+      pending: filteredActivities.filter(
+        (item) => normalize(item.status) === "pending"
+      ).length,
+      scheduled: filteredActivities.filter(
+        (item) => normalize(item.status) === "scheduled"
+      ).length,
     };
-  }, [activities]);
+  }, [filteredActivities]);
 
-  // Count asset_type occurrences for first chart
-  const assetTypeCounts: Record<string, number> = {};
-  activities.forEach(({ asset_type }) => {
-    assetTypeCounts[asset_type] = (assetTypeCounts[asset_type] ?? 0) + 1;
-  });
-  const assetTypeChartData = Object.entries(assetTypeCounts).map(([month, desktop]) => ({
-    month,
-    desktop,
-  }));
+  const advisoryTickets = React.useMemo(() => {
+    return filteredActivities.filter(
+      (item) =>
+        item.request_type === "Advisory" &&
+        item.status.toLowerCase() !== "resolved"
+    );
+  }, [filteredActivities]);
 
-  // Count brand occurrences for second chart
-  const brandCounts: Record<string, number> = {};
-  activities.forEach(({ brand }) => {
-    brandCounts[brand] = (brandCounts[brand] ?? 0) + 1;
-  });
-  const brandChartData = Object.entries(brandCounts).map(([month, desktop]) => ({
-    month,
-    desktop,
-  }));
-
-  const locationCounts: Record<string, number> = {};
-  activities.forEach(({ location }) => {
-    locationCounts[location] = (locationCounts[location] ?? 0) + 1;
-  });
-
-  const expiredWarranties = React.useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return activities.filter((item) => {
-      if (!item.warranty_date) return false;
-
-      const warrantyDate = new Date(item.warranty_date);
-      warrantyDate.setHours(0, 0, 0, 0);
-
-      return warrantyDate < today; // expired if warranty date is before today
-    });
-  }, [activities]);
-
-
+  const criticalTickets = React.useMemo(() => {
+    return filteredActivities.filter(
+      (item) =>
+        item.priority?.toLowerCase() === "critical" &&
+        item.status.toLowerCase() !== "resolved"
+    );
+  }, [filteredActivities]);
 
 
   return (
@@ -292,11 +259,16 @@ function DashboardContent() {
         <header className="bg-background sticky top-0 flex h-14 shrink-0 items-center gap-2">
           <div className="flex flex-1 items-center gap-2 px-3">
             <SidebarTrigger />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1">Dashboard</BreadcrumbPage>
+                  <BreadcrumbPage className="line-clamp-1">
+                    Dashboard
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -310,99 +282,93 @@ function DashboardContent() {
           ) : (
             <>
               {loadingActivities && <p>Loading activities...</p>}
-              {errorActivities && <p className="text-red-600 font-semibold">{errorActivities}</p>}
+              {errorActivities && (
+                <p className="text-red-600 font-semibold">{errorActivities}</p>
+              )}
+
+              {advisoryTickets.length > 0 && (
+                <div className="w-full">
+                  <Alert className="w-full border-orange-500 bg-orange-50">
+                    <AlertTitle className="font-semibold text-orange-700">
+                      Advisory Notice
+                    </AlertTitle>
+
+                    <AlertDescription className="space-y-4 text-sm leading-relaxed">
+                      {advisoryTickets.map((item) => (
+                        <div
+                          key={item.id}
+                          className="w-full rounded-md border bg-white p-4"
+                        >
+                          <p>
+                            This ticket is classified as an <strong>{item.request_type}</strong> request
+                            concerning <strong>{item.type_concern}</strong>.
+                          </p>
+
+                          <p className="mt-1">
+                            The issue is logged under <strong>Ticket ID {item.ticket_id}</strong> with the
+                            subject <strong>“{item.ticket_subject}”</strong>.
+                          </p>
+
+                          <p className="mt-1">
+                            It is currently being handled by <strong>{item.technician_name}</strong> at
+                            the <strong>{item.site}</strong> site.
+                          </p>
+
+                          <p className="mt-1">
+                            <strong>Remarks:</strong> {item.remarks || "No additional remarks provided."}
+                          </p>
+                        </div>
+                      ))}
+                    </AlertDescription>
+
+                  </Alert>
+                </div>
+              )}
+
+              {criticalTickets.length > 0 && (
+                <div className="w-full">
+                  <Alert className="w-full border-red-600 bg-red-50">
+                    <AlertTitle className="font-semibold text-red-700">
+                      🚨 Critical Priority Alert
+                    </AlertTitle>
+
+                    <AlertDescription className="space-y-4 text-sm leading-relaxed">
+                      {criticalTickets.map((item) => (
+                        <div
+                          key={item.id}
+                          className="w-full rounded-md border border-red-200 bg-white p-4"
+                        >
+                          <p>
+                            This ticket is marked as <strong>CRITICAL PRIORITY</strong> and
+                            requires immediate attention regarding{" "}
+                            <strong>{item.type_concern}</strong>.
+                          </p>
+
+                          <p className="mt-1">
+                            The issue is logged under <strong>Ticket ID {item.ticket_id}</strong>{" "}
+                            with the subject <strong>“{item.ticket_subject}”</strong>.
+                          </p>
+
+                          <p className="mt-1">
+                            It is currently being handled by{" "}
+                            <strong>{item.technician_name}</strong> at the{" "}
+                            <strong>{item.site}</strong> site.
+                          </p>
+
+                          <p className="mt-1">
+                            <strong>Remarks:</strong>{" "}
+                            {item.remarks || "No additional remarks provided."}
+                          </p>
+                        </div>
+                      ))}
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+
 
               <div className="flex flex-col gap-4">
                 <StatusCard counts={counts} userId={userId ?? undefined} />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Asset Types Distribution */}
-                <AssetCard
-                  chartData={assetTypeChartData}
-                  title="Asset Types Distribution"
-                  description="Based on asset_type counts"
-                />
-
-                {/* Brand Distribution */}
-                <BrandCard
-                  chartData={brandChartData}
-                  title="Brand Distribution"
-                  description="Based on brand counts"
-                />
-
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Location Distribution</CardTitle>
-                    <CardDescription>Count of items grouped by location</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col gap-2">
-                      {Object.entries(locationCounts).map(([location, count]) => (
-                        <Item key={location}>
-                          <Separator />
-                          <ItemContent>
-                            <div className="flex justify-between items-center w-full">
-                              <ItemTitle className="flex-1 text-left">{location}</ItemTitle>
-                              <ItemDescription className="flex-none">
-                                <Badge className="h-8 min-w-[2rem] rounded-full px-2 font-mono tabular-nums">{count}</Badge>
-                              </ItemDescription>
-                            </div>
-                          </ItemContent>
-                        </Item>
-                      ))}
-                      {Object.keys(locationCounts).length === 0 && (
-                        <p className="text-muted-foreground">No location data available.</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Out of Warranty / Expired Items</CardTitle>
-                    <CardDescription>Items with expired warranty dates</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {expiredWarranties.length === 0 ? (
-                      <p className="text-muted-foreground">No expired warranty items.</p>
-                    ) : (
-                      <Table className="text-xs">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Asset Tag</TableHead>
-                            <TableHead>Asset Type</TableHead>
-                            <TableHead>Brand</TableHead>
-                            <TableHead>Model</TableHead>
-                            <TableHead>Warranty Date</TableHead>
-                            <TableHead>Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {expiredWarranties.map((item) => (
-                            <TableRow key={item.id} className="odd:bg-white even:bg-gray-50">
-                              <TableCell>{item.asset_tag || "-"}</TableCell>
-                              <TableCell>{item.asset_type || "-"}</TableCell>
-                              <TableCell>{item.brand || "-"}</TableCell>
-                              <TableCell>{item.model || "-"}</TableCell>
-                              <TableCell>
-                                {item.warranty_date
-                                  ? new Date(item.warranty_date).toLocaleDateString()
-                                  : "-"}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="destructive" className="capitalize">
-                                  Expired
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardContent>
-                </Card>
-
               </div>
             </>
           )}

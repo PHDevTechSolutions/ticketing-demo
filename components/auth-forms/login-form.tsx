@@ -159,7 +159,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                             <div className="flex flex-col items-center gap-2 text-center">
                                 <h1 className="text-2xl font-bold">Welcome back</h1>
                                 <p className="text-muted-foreground text-balance">
-                                    Login to your Stash account
+                                    Login to your Help Desk account
                                 </p>
                             </div>
                             <Field>
@@ -167,7 +167,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="m@stash.com"
+                                    placeholder="m@helpdesk.com"
                                     required
                                     value={Email}
                                     onChange={(e) => setEmail(e.target.value)}

@@ -13,12 +13,16 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 
-import { Defective } from "@/components/defective";
+import { Catalogue } from "@/components/catalogue/services";
 import { type DateRange } from "react-day-picker";
 
 interface UserDetails {
     referenceid: string;
+    fullname: string;
+    firstname?: string;
+    lastname?: string;
 }
+
 
 function DashboardContent() {
     const searchParams = useSearchParams();
@@ -26,6 +30,9 @@ function DashboardContent() {
 
     const [userDetails, setUserDetails] = useState<UserDetails>({
         referenceid: "",
+        fullname: "",
+        firstname: "",
+        lastname: "",
     });
 
     const [loadingUser, setLoadingUser] = useState(true);
@@ -61,7 +68,11 @@ function DashboardContent() {
 
                 setUserDetails({
                     referenceid: data.ReferenceID || "",
+                    firstname: data.Firstname || "",
+                    lastname: data.Lastname || "",
+                    fullname: `${data.Lastname || ""}, ${data.Firstname || ""}`.trim(),
                 });
+
 
                 toast.success("User data loaded successfully!");
             } catch (err) {
@@ -86,7 +97,7 @@ function DashboardContent() {
                         <Breadcrumb>
                             <BreadcrumbList>
                                 <BreadcrumbItem>
-                                    <BreadcrumbPage className="line-clamp-1">Defective</BreadcrumbPage>
+                                    <BreadcrumbPage className="line-clamp-1">Service Catalogue</BreadcrumbPage>
                                 </BreadcrumbItem>
                             </BreadcrumbList>
                         </Breadcrumb>
@@ -95,8 +106,9 @@ function DashboardContent() {
 
                 <main className="flex flex-1 flex-col gap-4 p-4 overflow-auto">
                     <div>
-                        <Defective
+                        <Catalogue
                             referenceid={userDetails.referenceid}
+                            fullname={userDetails.fullname}
                             dateCreatedFilterRange={dateCreatedFilterRange}
                             setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction} />
                     </div>
