@@ -1,6 +1,21 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, Suspense } from "react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from "recharts";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { useSearchParams } from "next/navigation";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import { FormatProvider } from "@/contexts/FormatContext";
@@ -19,7 +34,15 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { type DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { supabase } from "@/utils/supabase";
@@ -38,6 +61,7 @@ interface RequestItem {
   remarks: string;
   priority: string;
   date_created?: string;
+  processed_by: string;
 }
 
 interface UserDetails {
@@ -175,7 +199,6 @@ function DashboardContent() {
     };
   }, []);
 
-  // Helper: safely parse date string
   function parseDate(dateStr?: string) {
     if (!dateStr) return null;
     const d = new Date(dateStr);
@@ -251,6 +274,35 @@ function DashboardContent() {
     );
   }, [filteredActivities]);
 
+  const groupedByProcessor = React.useMemo(() => {
+    const groups: Record<string, RequestItem[]> = {};
+    for (const item of filteredActivities) {
+      const key = item.processed_by || "Unassigned";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    }
+    return groups;
+  }, [filteredActivities]);
+
+  // Prepare data for BarChart
+  const barChartData = React.useMemo(() => {
+    return Object.entries(groupedByProcessor).map(([processor, tickets]) => ({
+      processor,
+      total: tickets.length,
+    }));
+  }, [groupedByProcessor]);
+
+  // Chart config for colors, labels, etc.
+  const chartConfig = React.useMemo(() => {
+    const config: Record<string, { label: string; color?: string }> = {};
+    barChartData.forEach((d, i) => {
+      config[d.processor] = {
+        label: d.processor,
+        color: `var(--chart-${(i % 5) + 1})`,
+      };
+    });
+    return config satisfies ChartConfig;
+  }, [barChartData]);
 
   return (
     <>
@@ -320,7 +372,6 @@ function DashboardContent() {
                         </div>
                       ))}
                     </AlertDescription>
-
                   </Alert>
                 </div>
               )}
@@ -366,9 +417,84 @@ function DashboardContent() {
                 </div>
               )}
 
-
               <div className="flex flex-col gap-4">
                 <StatusCard counts={counts} userId={userId ?? undefined} />
+              </div>
+
+              {/* Table ng processed_by with total ticket count */}
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Table Card */}
+                <Card className="flex-1">
+                  <CardHeader>
+                    <CardTitle>Tickets Count per Processed By</CardTitle>
+                  </CardHeader>
+                  <CardContent className="overflow-auto p-4">
+                    <Table>
+                      <TableCaption>Tickets Count per Processed By</TableCaption>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-left">Processed By</TableHead>
+                          <TableHead className="text-right">Total Tickets</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Object.entries(groupedByProcessor).map(([processor, tickets]) => (
+                          <TableRow
+                            key={processor}
+                            className="odd:bg-background even:bg-muted/50 hover:bg-muted/80 transition-colors"
+                          >
+                            <TableCell>{processor}</TableCell>
+                            <TableCell className="text-right font-medium">{tickets.length}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {/* Bar Chart Card */}
+                <Card className="flex-1 flex flex-col">
+                  <CardHeader className="items-center pb-0">
+                    <CardTitle>Tickets Distribution</CardTitle>
+                    <CardDescription>Grouped by Processed By</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 pb-0">
+                    <ChartContainer
+                      config={chartConfig}
+                      className="[&_.recharts-text]:fill-background mx-auto"
+                      style={{ height: "450px", width: "100%" }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={barChartData}
+                          layout="vertical"
+                          margin={{ right: 20, left: 20 }}
+                        >
+                          <CartesianGrid horizontal={false} />
+                          <YAxis
+                            dataKey="processor"
+                            type="category"
+                            tickLine={false}
+                            axisLine={false}
+                            width={180}
+                          />
+                          <XAxis type="number" />
+                          <ChartTooltip
+                            content={<ChartTooltipContent nameKey="total" hideLabel />}
+                          />
+                          <Bar dataKey="total" fill="var(--chart-2)" radius={4}>
+                            <LabelList dataKey="total" position="right" />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </CardContent>
+                  <CardFooter className="flex-col gap-2 text-sm">
+                    <div className="text-muted-foreground leading-none">
+                      Showing ticket distribution per processed by user
+                    </div>
+                  </CardFooter>
+                </Card>
               </div>
             </>
           )}
