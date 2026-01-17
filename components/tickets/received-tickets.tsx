@@ -13,7 +13,15 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { type DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner";
-
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select"
 import { ReceivedDialog } from "@/components/tickets/received-ticket-dialog";
 import { supabase } from "@/utils/supabase"; // adjust path if needed
 
@@ -64,6 +72,12 @@ export const Received: React.FC<RequestProps> = ({
 
     const [open, setOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [filterOpen, setFilterOpen] = useState(false);
+
+    const [statusFilter, setStatusFilter] = useState<string>("");
+    const [requestTypeFilter, setRequestTypeFilter] = useState<string>("");
+    const [priorityFilter, setPriorityFilter] = useState<string>("");
+
     const [, forceTick] = useState(0);
     useEffect(() => {
         const interval = setInterval(() => {
@@ -72,7 +86,6 @@ export const Received: React.FC<RequestProps> = ({
 
         return () => clearInterval(interval);
     }, []);
-
 
     const [form, setForm] = useState<Omit<RequestItem, "id">>({
         ticket_id: "",
@@ -210,9 +223,15 @@ export const Received: React.FC<RequestProps> = ({
                 if (endDate && itemDate > endDate) return false;
             }
 
+            // New filters here
+            if (statusFilter && item.status !== statusFilter) return false;
+            if (requestTypeFilter && item.request_type !== requestTypeFilter) return false;
+            if (priorityFilter && item.priority !== priorityFilter) return false;
+
             return true;
         });
-    }, [activities, search, dateCreatedFilterRange]);
+    }, [activities, search, dateCreatedFilterRange, statusFilter, requestTypeFilter, priorityFilter]);
+
 
     const pageCount = Math.ceil(filteredActivities.length / PAGE_SIZE);
 
@@ -310,7 +329,7 @@ export const Received: React.FC<RequestProps> = ({
             date_scheduled: item.date_scheduled ?? "",
             remarks: item.remarks ?? "",
             processed_by: item.processed_by ?? "",
-            closed_by: fullname ?? "", 
+            closed_by: fullname ?? "",
             date_created: item.date_created ?? "",
         });
         setOpen(true);
@@ -506,6 +525,95 @@ export const Received: React.FC<RequestProps> = ({
         });
     }
 
+    function convertToCSV(data: RequestItem[]) {
+        if (data.length === 0) return "";
+
+        const headers = [
+            "Ticket ID",
+            "Requestor Name",
+            "Ticket Subject",
+            "Department",
+            "Request Type",
+            "Type of Concern",
+            "Mode",
+            "Group Services",
+            "Technician Name",
+            "Site",
+            "Priority",
+            "Duration",
+            "Remaining Time",
+            "Status",
+            "Date Scheduled",
+            "Remarks",
+            "Processed By",
+            "Closed By",
+            "Date Created",
+            "Date Closed",
+        ];
+
+        const rows = data.map((item) => [
+            item.ticket_id || "",
+            item.requestor_name || "",
+            item.ticket_subject || "",
+            item.department || "",
+            item.request_type || "",
+            item.type_concern || "",
+            item.mode || "",
+            item.group_services || "",
+            item.technician_name || "",
+            item.site || "",
+            item.priority || "",
+
+            // Use your existing computeDuration and computeRemainingTime functions here:
+            computeDuration(item.date_created, item.date_closed, item.status),
+            computeRemainingTime(item.priority, item.date_created, item.date_closed, item.status),
+
+            item.status || "",
+            item.date_scheduled || "",
+            item.remarks || "",
+            item.processed_by || "",
+            item.closed_by || "",
+            item.date_created || "",
+            item.date_closed || "",
+        ]);
+
+        // Escape values that contain commas, quotes, or newlines
+        const escapeCSVValue = (value: string) => {
+            if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+                return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+        };
+
+        const csvContent =
+            headers.map(escapeCSVValue).join(",") +
+            "\n" +
+            rows
+                .map((row) => row.map(escapeCSVValue).join(","))
+                .join("\n");
+
+        return csvContent;
+    }
+
+    function downloadCSV() {
+        const csv = convertToCSV(filteredActivities);
+
+        if (!csv) {
+            toast.error("No data to export");
+            return;
+        }
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `tickets_export_${new Date().toISOString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
 
     if (errorActivities) {
         return (
@@ -536,10 +644,11 @@ export const Received: React.FC<RequestProps> = ({
     return (
         <Card className="w-full p-4 rounded-xl flex flex-col">
             <CardHeader className="p-0 mb-2">
-                <div className="flex items-center justify-between space-x-4">
+                <div className="flex items-center justify-between">
+                    {/* Left side: Search bar */}
                     <Input
                         placeholder="Search Tickets..."
-                        className="text-xs flex-grow max-w-[400px]"
+                        className="text-xs max-w-[400px]"
                         value={search}
                         onChange={(e) => {
                             setSearch(e.target.value);
@@ -548,22 +657,33 @@ export const Received: React.FC<RequestProps> = ({
                         }}
                     />
 
-                    <div className="flex space-x-2 items-center">
+                    {/* Right side: buttons grouped */}
+                    <div className="flex items-center space-x-2">
+                        <Button variant="outline" onClick={() => setFilterOpen(true)}>
+                            Filters
+                        </Button>
+
+                        <Button onClick={downloadCSV} variant="outline">
+                            Download CSV
+                        </Button>
+
                         {selectedIds.size > 0 && (
                             <Button variant="destructive" onClick={handleDeleteSelected}>
                                 Delete Selected ({selectedIds.size})
                             </Button>
                         )}
+
                         <Button
                             onClick={() => {
                                 resetForm();
                                 setOpen(true);
                             }}
                         >
-                            Add New
+                            Create Ticket
                         </Button>
                     </div>
                 </div>
+
             </CardHeader>
 
             {loadingActivities ? (
@@ -590,7 +710,7 @@ export const Received: React.FC<RequestProps> = ({
                                         aria-label="Select all items on page"
                                     />
                                 </TableHead>
-                                <TableHead>Actions</TableHead>
+                                <TableHead>Edit</TableHead>
                                 <TableHead>Ticket ID</TableHead>
                                 <TableHead>Ticket Subject</TableHead>
                                 <TableHead>Priority</TableHead>
@@ -608,7 +728,7 @@ export const Received: React.FC<RequestProps> = ({
                                 <TableHead>Date Scheduled</TableHead>
                                 <TableHead>Processed By</TableHead>
                                 <TableHead>Closed By</TableHead>
-                                <TableHead>Remarks</TableHead>
+                                <TableHead>Actions</TableHead>
                                 <TableHead>Date Created</TableHead>
                                 <TableHead>Date Closed</TableHead>
                             </TableRow>
@@ -719,6 +839,83 @@ export const Received: React.FC<RequestProps> = ({
                     </div>
                 </>
             )}
+
+            <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Filter Tickets</DialogTitle>
+                        <DialogDescription>
+                            Apply filters to narrow down the ticket list.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {/* Status Filter */}
+                        <div>
+                            <label htmlFor="status" className="block font-medium text-sm mb-1">Status</label>
+                            <select
+                                id="status"
+                                className="w-full border rounded px-2 py-1"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="">All</option>
+                                <option value="Ongoing">Ongoing</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Resolved">Resolved</option>
+                                <option value="Scheduled">Scheduled</option>
+                            </select>
+                        </div>
+
+                        {/* Request Type Filter */}
+                        <div>
+                            <label htmlFor="requestType" className="block font-medium text-sm mb-1">Request Type</label>
+                            <select
+                                id="requestType"
+                                className="w-full border rounded px-2 py-1"
+                                value={requestTypeFilter}
+                                onChange={(e) => setRequestTypeFilter(e.target.value)}
+                            >
+                                <option value="">All</option>
+                                {/* Add the possible request types you expect */}
+                                <option value="Advisory">Advisory</option>
+                                <option value="Incident">Incident</option>
+                                <option value="Request">Request</option>
+                            </select>
+                        </div>
+
+                        {/* Priority Filter */}
+                        <div>
+                            <label htmlFor="priority" className="block font-medium text-sm mb-1">Priority</label>
+                            <select
+                                id="priority"
+                                className="w-full border rounded px-2 py-1"
+                                value={priorityFilter}
+                                onChange={(e) => setPriorityFilter(e.target.value)}
+                            >
+                                <option value="">All</option>
+                                <option value="Critical">Critical</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="flex justify-end space-x-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setStatusFilter("");
+                                setRequestTypeFilter("");
+                                setPriorityFilter("");
+                            }}
+                        >
+                            Clear Filters
+                        </Button>
+                        <Button onClick={() => setFilterOpen(false)}>Apply</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <ReceivedDialog
                 open={open}
