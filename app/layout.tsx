@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   title: "Help Desk - IT Ticketing System",
   description: "Localized IT IT Ticketing System built with Next.js and Tailwind CSS",
   icons: {
-    icon: "/stash-mini-darkmode.png",
+    icon: "/ticketing.png",
   },
 }
 
