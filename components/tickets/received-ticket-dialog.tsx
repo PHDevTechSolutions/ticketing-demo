@@ -272,7 +272,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                             <SelectContent className="w-full">
                                 <SelectItem value="Advisory">Advisory</SelectItem>
                                 <SelectItem value="Incident">Incident</SelectItem>
-                                <SelectItem value="Maintenance">Maintenance</SelectItem>
+                                <SelectItem value="Maintenance">Maintenance Request</SelectItem>
                                 <SelectItem value="Major Incident">Major Incident</SelectItem>
                                 <SelectItem value="Incident / Service Request">Incident / Service Request</SelectItem>
                                 <SelectItem value="Request">Request</SelectItem>
@@ -411,7 +411,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
 
                     {/* Remarks */}
                     <div className="flex flex-col">
-                        <label className="mb-1 text-xs font-medium">Remarks</label>
+                        <label className="mb-1 text-xs font-medium">Actions</label>
                         <textarea
                             name="remarks"
                             value={form.remarks || ""}
@@ -419,7 +419,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                 handleSelectChange("remarks", e.target.value)
                             }
                             rows={5}
-                            placeholder="Remarks"
+                            placeholder="Actions"
                             className="rounded-md border border-input bg-background p-2 text-sm resize-none"
                         />
                     </div>
