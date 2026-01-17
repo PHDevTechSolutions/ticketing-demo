@@ -69,6 +69,9 @@ interface CatalogueProps {
     referenceid: string;
     fullname: string;
     dateCreatedFilterRange: DateRange | undefined;
+    setDateCreatedFilterRangeAction: React.Dispatch<
+        React.SetStateAction<DateRange | undefined>
+    >;
 }
 
 const PAGE_SIZE = 10;
