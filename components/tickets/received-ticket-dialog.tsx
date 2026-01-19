@@ -468,6 +468,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                         </div>
                     )}
 
+                    {form.status === "Resolved" && (
                     <div className="flex flex-col w-full mt-2">
                         <label className="mb-1 text-xs font-medium">Date Closed</label>
                         <Input
@@ -477,6 +478,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                             onChange={onDateClosedChange}
                         />
                     </div>
+                    )}
 
                 </div>
 
