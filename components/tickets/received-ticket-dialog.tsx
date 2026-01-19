@@ -156,6 +156,15 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
         } as React.ChangeEvent<HTMLInputElement>);
     };
 
+    const onDateClosedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const localValue = e.target.value;
+        const isoTimestamp = toISOStringFromLocalDateTime(localValue);
+
+        handleInputChange({
+            target: { name: "date_closed", value: isoTimestamp }
+        } as React.ChangeEvent<HTMLInputElement>);
+    };
+
     return (
         <Sheet
             open={open}
@@ -458,6 +467,16 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                             />
                         </div>
                     )}
+
+                    <div className="flex flex-col w-full mt-2">
+                        <label className="mb-1 text-xs font-medium">Date Closed</label>
+                        <Input
+                            type="datetime-local"
+                            name="date_closed"
+                            value={toDateTimeLocalString(form.date_closed)}
+                            onChange={onDateClosedChange}
+                        />
+                    </div>
 
                 </div>
 
