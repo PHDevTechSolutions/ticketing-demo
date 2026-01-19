@@ -34,21 +34,24 @@ interface TicketDialogProps {
     existingTicketIds: string[];
 }
 
-function generateTicketID(existingTicketIds: string[]): string {
+function generateTicketID(existingTicketIds: string[], dateCreated?: string): string {
     const prefix = "DSI";
 
-    const now = new Date();
+    // Use dateCreated if provided, else current date
+    const now = dateCreated ? new Date(dateCreated) : new Date();
+
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
     const datePart = `${year}-${month}-${day}`;
 
-    const todayIds = existingTicketIds.filter(id => id.startsWith(`${prefix}-${datePart}`));
+    // Filter tickets by the datePart (year-month-day)
+    const todayIds = existingTicketIds.filter((id) => id.startsWith(`${prefix}-${datePart}`));
 
     let maxSeq = 0;
     for (const id of todayIds) {
         const parts = id.split("-");
-        const seqStr = parts[4];  // <-- Fix here
+        const seqStr = parts[4]; // expected sequence part
         const seqNum = parseInt(seqStr, 10);
         if (!isNaN(seqNum) && seqNum > maxSeq) {
             maxSeq = seqNum;
@@ -101,27 +104,23 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
 
     useEffect(() => {
         if (open && !editingId && !initializedRef.current) {
-            // Only run once per open
-
-            // Generate new ticket ID
-            const newTicketId = generateTicketID(existingTicketIds);
+            // Generate new ticket ID based on initial date_created or today
+            const newTicketId = generateTicketID(existingTicketIds, form.date_created);
             handleInputChange({
                 target: { name: "ticket_id", value: newTicketId },
             } as React.ChangeEvent<HTMLInputElement>);
 
-            // Set processed_by if empty
+            // Initialize other fields if empty
             if (!form.processed_by) {
                 handleInputChange({
                     target: { name: "processed_by", value: fullname },
                 } as React.ChangeEvent<HTMLInputElement>);
             }
-
             if (!form.technician_name) {
                 handleInputChange({
                     target: { name: "technician_name", value: fullname },
                 } as React.ChangeEvent<HTMLInputElement>);
             }
-
             if (!form.closed_by) {
                 handleInputChange({
                     target: { name: "closed_by", value: fullname },
@@ -131,12 +130,22 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
             initializedRef.current = true;
         }
 
-        // Reset flag when sheet closes
         if (!open) {
             initializedRef.current = false;
         }
     }, [open, editingId, existingTicketIds, fullname, handleInputChange, form.processed_by]);
 
+    // New effect: regenerate ticket ID whenever date_created changes and not editing
+    useEffect(() => {
+        if (open && !editingId && form.date_created) {
+            const newTicketId = generateTicketID(existingTicketIds, form.date_created);
+            if (newTicketId !== form.ticket_id) {
+                handleInputChange({
+                    target: { name: "ticket_id", value: newTicketId },
+                } as React.ChangeEvent<HTMLInputElement>);
+            }
+        }
+    }, [form.date_created, open, editingId, existingTicketIds, handleInputChange, form.ticket_id]);
 
     const onDateCreatedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const localValue = e.target.value;
@@ -192,11 +201,11 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
 
                                 {/* Closed By */}
                                 {form.status === "Resolved" && (
-                                <div>
-                                    <div className="font-semibold text-indigo-900">Closed By: {form.closed_by || "-"}</div>
-                                    <Input type="hidden" name="closed_by" value={form.closed_by || ""}
-                                    />
-                                </div>
+                                    <div>
+                                        <div className="font-semibold text-indigo-900">Closed By: {form.closed_by || "-"}</div>
+                                        <Input type="hidden" name="closed_by" value={form.closed_by || ""}
+                                        />
+                                    </div>
                                 )}
                             </AlertDescription>
                         </Alert>
