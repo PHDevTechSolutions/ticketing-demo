@@ -183,55 +183,67 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="mt-6 grid grid-cols-1 gap-4 max-h-[70vh] overflow-auto p-4">
+                <div className="grid grid-cols-1 gap-4 max-h-[70vh] overflow-auto pr-4 pl-4">
 
                     <div className="flex flex-col gap-4">
                         <Alert className="p-4">
                             <AlertTitle className="mb-2">Ticket Information</AlertTitle>
-                            <AlertDescription className="space-y-2">
+                            <AlertDescription>
                                 {/* Ticket ID display */}
-                                <div>
-                                    <div className="font-semibold text-indigo-900">Ticket ID: {form.ticket_id || "-"}</div>
-                                    <Input type="hidden" name="ticket_id" value={form.ticket_id || ""} />
+                                <div className="flex items-center gap-x-2 text-indigo-900">
+                                    <div className="font-semibold whitespace-nowrap">
+                                        Ticket ID:
+                                    </div>
+                                    <Input
+                                        type="text"
+                                        name="ticket_id"
+                                        value={form.ticket_id || ""}
+                                        onChange={handleInputChange}
+                                        className="border-none shadow-none p-0"
+                                    />
                                 </div>
 
                                 {/* Processed By display */}
-                                <div>
-                                    <div className="font-semibold text-indigo-900">
-                                        Processed By: <Input
-                                            type="text"
-                                            name="processed_by"
-                                            value={form.processed_by || ""}
-                                            onChange={handleInputChange}
-                                        />
+                                <div className="flex items-center gap-x-2 text-indigo-900">
+                                    <div className="font-semibold whitespace-nowrap">
+                                        Processed By:
                                     </div>
-
+                                    <Input
+                                        type="text"
+                                        name="processed_by"
+                                        value={form.processed_by || ""}
+                                        onChange={handleInputChange}
+                                        className="border-none shadow-none p-0"
+                                    />
                                 </div>
 
                                 {/* Technician Name */}
-                                <div>
-                                    <div className="font-semibold text-indigo-900">
-                                        Technician Name: <Input
-                                            type="text"
-                                            name="technician_name"
-                                            value={form.technician_name || ""}
-                                            onChange={handleInputChange}
-                                        />
-
+                                <div className="flex items-center gap-x-2 text-indigo-900">
+                                    <div className="font-semibold whitespace-nowrap">
+                                        Technician Name:
                                     </div>
+                                    <Input
+                                        type="text"
+                                        name="technician_name"
+                                        value={form.technician_name || ""}
+                                        onChange={handleInputChange}
+                                        className="border-none shadow-none p-0"
+                                    />
                                 </div>
 
                                 {/* Closed By */}
                                 {form.status === "Resolved" && (
-                                    <div>
-                                        <div className="font-semibold text-indigo-900">
-                                            Closed By: <Input
-                                                type="text"
-                                                name="closed_by"
-                                                value={form.closed_by || ""}
-                                                onChange={handleInputChange}
-                                            />
+                                    <div className="flex items-center gap-x-2 text-indigo-900">
+                                        <div className="font-semibold whitespace-nowrap">
+                                            Closed By:
                                         </div>
+                                        <Input
+                                            type="text"
+                                            name="closed_by"
+                                            value={form.closed_by || ""}
+                                            onChange={handleInputChange}
+                                            className="border-none shadow-none p-0"
+                                        />
                                     </div>
                                 )}
 
