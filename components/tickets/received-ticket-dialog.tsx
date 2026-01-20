@@ -197,25 +197,53 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
 
                                 {/* Processed By display */}
                                 <div>
-                                    <div className="font-semibold text-indigo-900">Processed By: {form.processed_by || "-"}</div>
-                                    <Input type="hidden" name="processed_by" value={form.processed_by || ""} />
+                                    <div className="font-semibold text-indigo-900">
+                                        Processed By: {form.processed_by || "-"}
+                                    </div>
+                                    {!form.processed_by && (
+                                        <Input
+                                            type="text"
+                                            name="processed_by"
+                                            value={form.processed_by || ""}
+                                            onChange={handleInputChange}
+                                        />
+                                    )}
                                 </div>
 
                                 {/* Technician Name */}
                                 <div>
-                                    <div className="font-semibold text-indigo-900">Technician Name: {form.processed_by || "-"}</div>
-                                    <Input type="hidden" name="technician_name" value={form.technician_name || ""}
-                                    />
+                                    <div className="font-semibold text-indigo-900">
+                                        Technician Name: {form.technician_name || "-"}
+                                    </div>
+                                    {!form.technician_name && (
+                                        <Input
+                                            type="text"
+                                            name="technician_name"
+                                            value={form.technician_name || ""}
+                                            onChange={handleInputChange}
+                                        />
+                                    )}
                                 </div>
 
                                 {/* Closed By */}
                                 {form.status === "Resolved" && (
                                     <div>
-                                        <div className="font-semibold text-indigo-900">Closed By: {form.closed_by || "-"}</div>
-                                        <Input type="hidden" name="closed_by" value={form.closed_by || ""}
-                                        />
+                                        <div className="font-semibold text-indigo-900">
+                                            Closed By: {form.closed_by || "-"}
+                                        </div>
+                                        {!form.closed_by ? (
+                                            <Input
+                                                type="text"
+                                                name="closed_by"
+                                                value={form.closed_by || ""}
+                                                onChange={handleInputChange}
+                                            />
+                                        ) : (
+                                            <Input type="hidden" name="closed_by" value={form.closed_by} />
+                                        )}
                                     </div>
                                 )}
+
                             </AlertDescription>
                         </Alert>
                     </div>
@@ -469,15 +497,15 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                     )}
 
                     {form.status === "Resolved" && (
-                    <div className="flex flex-col w-full mt-2">
-                        <label className="mb-1 text-xs font-medium">Date Closed</label>
-                        <Input
-                            type="datetime-local"
-                            name="date_closed"
-                            value={toDateTimeLocalString(form.date_closed)}
-                            onChange={onDateClosedChange}
-                        />
-                    </div>
+                        <div className="flex flex-col w-full mt-2">
+                            <label className="mb-1 text-xs font-medium">Date Closed</label>
+                            <Input
+                                type="datetime-local"
+                                name="date_closed"
+                                value={toDateTimeLocalString(form.date_closed)}
+                                onChange={onDateClosedChange}
+                            />
+                        </div>
                     )}
 
                 </div>
