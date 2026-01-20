@@ -198,49 +198,40 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                 {/* Processed By display */}
                                 <div>
                                     <div className="font-semibold text-indigo-900">
-                                        Processed By: {form.processed_by || "-"}
-                                    </div>
-                                    {!form.processed_by && (
-                                        <Input
+                                        Processed By: <Input
                                             type="text"
                                             name="processed_by"
                                             value={form.processed_by || ""}
                                             onChange={handleInputChange}
                                         />
-                                    )}
+                                    </div>
+
                                 </div>
 
                                 {/* Technician Name */}
                                 <div>
                                     <div className="font-semibold text-indigo-900">
-                                        Technician Name: {form.technician_name || "-"}
-                                    </div>
-                                    {!form.technician_name && (
-                                        <Input
+                                        Technician Name: <Input
                                             type="text"
                                             name="technician_name"
                                             value={form.technician_name || ""}
                                             onChange={handleInputChange}
                                         />
-                                    )}
+
+                                    </div>
                                 </div>
 
                                 {/* Closed By */}
                                 {form.status === "Resolved" && (
                                     <div>
                                         <div className="font-semibold text-indigo-900">
-                                            Closed By: {form.closed_by || "-"}
-                                        </div>
-                                        {!form.closed_by ? (
-                                            <Input
+                                            Closed By: <Input
                                                 type="text"
                                                 name="closed_by"
                                                 value={form.closed_by || ""}
                                                 onChange={handleInputChange}
                                             />
-                                        ) : (
-                                            <Input type="hidden" name="closed_by" value={form.closed_by} />
-                                        )}
+                                        </div>
                                     </div>
                                 )}
 
