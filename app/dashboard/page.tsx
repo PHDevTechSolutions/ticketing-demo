@@ -220,14 +220,14 @@ function DashboardContent() {
 
     const toTime = dateCreatedFilterRange.to
       ? new Date(
-        dateCreatedFilterRange.to.getFullYear(),
-        dateCreatedFilterRange.to.getMonth(),
-        dateCreatedFilterRange.to.getDate(),
-        23,
-        59,
-        59,
-        999
-      ).getTime()
+          dateCreatedFilterRange.to.getFullYear(),
+          dateCreatedFilterRange.to.getMonth(),
+          dateCreatedFilterRange.to.getDate(),
+          23,
+          59,
+          59,
+          999
+        ).getTime()
       : Infinity;
 
     return activities.filter((item) => {
@@ -274,25 +274,48 @@ function DashboardContent() {
     );
   }, [filteredActivities]);
 
+  // Normalize processor key for grouping (lowercase + trimmed, fallback to 'unassigned')
+  const normalizeProcessorKey = (str?: string) => {
+    if (!str) return "unassigned";
+    const trimmed = str.trim();
+    return trimmed === "" ? "unassigned" : trimmed.toLowerCase();
+  };
+
+  // Format processor name for display (capitalize each word)
+  const formatProcessorName = (key: string) => {
+    if (key === "unassigned") return "Unassigned";
+    return key
+      .split(" ")
+      .map(
+        (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      )
+      .join(" ");
+  };
+
   const groupedByProcessor = React.useMemo(() => {
     const groups: Record<string, RequestItem[]> = {};
     for (const item of filteredActivities) {
-      const key = item.processed_by || "Unassigned";
+      const key = normalizeProcessorKey(item.processed_by);
       if (!groups[key]) groups[key] = [];
       groups[key].push(item);
     }
     return groups;
   }, [filteredActivities]);
 
-  // Prepare data for BarChart
-  const barChartData = React.useMemo(() => {
-    return Object.entries(groupedByProcessor).map(([processor, tickets]) => ({
-      processor,
-      total: tickets.length,
-    }));
+  // Sorted array of [processorKey, tickets] entries by descending ticket count
+  const sortedGroupedByProcessor = React.useMemo(() => {
+    return Object.entries(groupedByProcessor).sort(([, a], [, b]) => b.length - a.length);
   }, [groupedByProcessor]);
 
-  // Chart config for colors, labels, etc.
+  // Prepare data for BarChart with formatted display names
+  const barChartData = React.useMemo(() => {
+    return sortedGroupedByProcessor.map(([processorKey, tickets]) => ({
+      processor: formatProcessorName(processorKey),
+      total: tickets.length,
+    }));
+  }, [sortedGroupedByProcessor]);
+
+  // Chart config for consistent colors etc
   const chartConfig = React.useMemo(() => {
     const config: Record<string, { label: string; color?: string }> = {};
     barChartData.forEach((d, i) => {
@@ -438,12 +461,12 @@ function DashboardContent() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {Object.entries(groupedByProcessor).map(([processor, tickets]) => (
+                        {sortedGroupedByProcessor.map(([processorKey, tickets]) => (
                           <TableRow
-                            key={processor}
+                            key={processorKey}
                             className="odd:bg-background even:bg-muted/50 hover:bg-muted/80 transition-colors"
                           >
-                            <TableCell>{processor}</TableCell>
+                            <TableCell>{formatProcessorName(processorKey)}</TableCell>
                             <TableCell className="text-right font-medium">{tickets.length}</TableCell>
                           </TableRow>
                         ))}
