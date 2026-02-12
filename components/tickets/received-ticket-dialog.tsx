@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     Sheet,
     SheetContent,
@@ -18,6 +18,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface TicketDialogProps {
@@ -99,7 +106,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
     fullname,
     existingTicketIds
 }) => {
-
+    const [showConfirmClose, setShowConfirmClose] = useState(false);
     const initializedRef = useRef(false);
 
     useEffect(() => {
@@ -165,370 +172,418 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
         } as React.ChangeEvent<HTMLInputElement>);
     };
 
+    const hasChanges = () => {
+        // Checks if any form field is filled
+        return Object.values(form).some((val) => val !== "" && val !== null && val !== undefined);
+    };
+
+    const handleAttemptClose = () => {
+        if (hasChanges()) {
+            setShowConfirmClose(true); // Show confirmation
+        } else {
+            setOpen(false); // No changes, safe to close
+            resetForm();
+        }
+    };
+
+    const confirmClose = () => {
+        setShowConfirmClose(false);
+        setOpen(false);
+        resetForm();
+    };
+
+    const cancelClose = () => {
+        setShowConfirmClose(false);
+    };
+
+    useEffect(() => {
+        if (open && !editingId && !initializedRef.current) {
+            // Initialize default fields like before...
+            initializedRef.current = true;
+        }
+
+        if (!open) {
+            initializedRef.current = false;
+        }
+    }, [open, editingId]);
+
     return (
-        <Sheet
-            open={open}
-            onOpenChange={(open) => {
-                setOpen(open);
-                if (!open) resetForm();
-            }}
-        >
-            <SheetContent side="right" className="w-[420px] sm:w-[540px]">
-                <SheetHeader>
-                    <SheetTitle>
-                        {editingId ? "Edit Ticket" : "Add New Ticket"}
-                    </SheetTitle>
-                    <SheetDescription>
-                        Fill out the form below to {editingId ? "update" : "add"} a ticket.
-                    </SheetDescription>
-                </SheetHeader>
+        <>
+            <Sheet
+                open={open}
+                onOpenChange={(newOpen) => {
+                    if (!newOpen) handleAttemptClose();
+                }}
+            >
+                <SheetContent side="right" className="w-[420px] sm:w-[540px]">
+                    <SheetHeader>
+                        <SheetTitle>
+                            {editingId ? "Edit Ticket" : "Add New Ticket"}
+                        </SheetTitle>
+                        <SheetDescription>
+                            Fill out the form below to {editingId ? "update" : "add"} a ticket.
+                        </SheetDescription>
+                    </SheetHeader>
 
-                <div className="grid grid-cols-1 gap-4 max-h-[70vh] overflow-auto pr-4 pl-4">
+                    <div className="grid grid-cols-1 gap-4 max-h-[70vh] overflow-auto pr-4 pl-4">
 
-                    <div className="flex flex-col gap-4">
-                        <Alert className="p-4">
-                            <AlertTitle className="mb-2">Ticket Information</AlertTitle>
-                            <AlertDescription>
-                                {/* Ticket ID display */}
-                                <div className="flex items-center gap-x-2 text-indigo-900">
-                                    <div className="font-semibold whitespace-nowrap">
-                                        Ticket ID:
-                                    </div>
-                                    <Input
-                                        type="text"
-                                        name="ticket_id"
-                                        value={form.ticket_id || ""}
-                                        onChange={handleInputChange}
-                                        className="border-none shadow-none p-0"
-                                    />
-                                </div>
-
-                                {/* Processed By display */}
-                                <div className="flex items-center gap-x-2 text-indigo-900">
-                                    <div className="font-semibold whitespace-nowrap">
-                                        Processed By:
-                                    </div>
-                                    <Input
-                                        type="text"
-                                        name="processed_by"
-                                        value={form.processed_by || ""}
-                                        onChange={handleInputChange}
-                                        className="border-none shadow-none p-0"
-                                    />
-                                </div>
-
-                                {/* Technician Name */}
-                                <div className="flex items-center gap-x-2 text-indigo-900">
-                                    <div className="font-semibold whitespace-nowrap">
-                                        Technician Name:
-                                    </div>
-                                    <Input
-                                        type="text"
-                                        name="technician_name"
-                                        value={form.technician_name || ""}
-                                        onChange={handleInputChange}
-                                        className="border-none shadow-none p-0"
-                                    />
-                                </div>
-
-                                {/* Closed By */}
-                                {form.status === "Resolved" && (
+                        <div className="flex flex-col gap-4">
+                            <Alert className="p-4">
+                                <AlertTitle className="mb-2">Ticket Information</AlertTitle>
+                                <AlertDescription>
+                                    {/* Ticket ID display */}
                                     <div className="flex items-center gap-x-2 text-indigo-900">
                                         <div className="font-semibold whitespace-nowrap">
-                                            Closed By:
+                                            Ticket ID:
                                         </div>
                                         <Input
                                             type="text"
-                                            name="closed_by"
-                                            value={form.closed_by || ""}
+                                            name="ticket_id"
+                                            value={form.ticket_id || ""}
                                             onChange={handleInputChange}
                                             className="border-none shadow-none p-0"
                                         />
                                     </div>
-                                )}
 
-                            </AlertDescription>
-                        </Alert>
-                    </div>
+                                    {/* Processed By display */}
+                                    <div className="flex items-center gap-x-2 text-indigo-900">
+                                        <div className="font-semibold whitespace-nowrap">
+                                            Processed By:
+                                        </div>
+                                        <Input
+                                            type="text"
+                                            name="processed_by"
+                                            value={form.processed_by || ""}
+                                            onChange={handleInputChange}
+                                            className="border-none shadow-none p-0"
+                                        />
+                                    </div>
 
-                    {/* Full Name */}
-                    <div className="flex flex-col">
-                        <label className="mb-1 text-xs font-medium">Full Name</label>
-                        <Input
-                            name="requestor_name"
-                            value={form.requestor_name || ""}
-                            onChange={handleInputChange}
-                            placeholder="Requester's Full Name"
-                            className="capitalize"
-                        />
-                    </div>
+                                    {/* Technician Name */}
+                                    <div className="flex items-center gap-x-2 text-indigo-900">
+                                        <div className="font-semibold whitespace-nowrap">
+                                            Technician Name:
+                                        </div>
+                                        <Input
+                                            type="text"
+                                            name="technician_name"
+                                            value={form.technician_name || ""}
+                                            onChange={handleInputChange}
+                                            className="border-none shadow-none p-0"
+                                        />
+                                    </div>
 
-                    {/* Concern Type */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Ticket Subject</label>
-                        <Input
-                            name="ticket_subject"
-                            value={form.ticket_subject || ""}
-                            onChange={handleInputChange}
-                            placeholder="Ticket Subject"
-                            className="capitalize"
-                        />
-                    </div>
+                                    {/* Closed By */}
+                                    {form.status === "Resolved" && (
+                                        <div className="flex items-center gap-x-2 text-indigo-900">
+                                            <div className="font-semibold whitespace-nowrap">
+                                                Closed By:
+                                            </div>
+                                            <Input
+                                                type="text"
+                                                name="closed_by"
+                                                value={form.closed_by || ""}
+                                                onChange={handleInputChange}
+                                                className="border-none shadow-none p-0"
+                                            />
+                                        </div>
+                                    )}
 
-                    {/* Department (SELECT) */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Department</label>
+                                </AlertDescription>
+                            </Alert>
+                        </div>
 
-                        <Select
-                            value={form.department || ""}
-                            onValueChange={(value) =>
-                                handleSelectChange("department", value)
-                            }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select department" />
-                            </SelectTrigger>
-
-                            <SelectContent className="w-full">
-                                <SelectItem value="Admin">Admin</SelectItem>
-                                <SelectItem value="Accounting">Accounting</SelectItem>
-                                <SelectItem value="Business Development">Business Development</SelectItem>
-                                <SelectItem value="Customer Service Representative">Customer Service Representative</SelectItem>
-                                <SelectItem value="Engineering">Engineering</SelectItem>
-                                <SelectItem value="E-Commerce">E-Commerce</SelectItem>
-                                <SelectItem value="Human Resources">Human Resources</SelectItem>
-                                <SelectItem value="Information Technology">Information Technology</SelectItem>
-                                <SelectItem value="Marketing">Marketing</SelectItem>
-                                <SelectItem value="Procurement">Procurement</SelectItem>
-                                <SelectItem value="Sales">Sales</SelectItem>
-                                <SelectItem value="Warehouse Operations">Warehouse Operations</SelectItem>
-                                <SelectItem value="Management">Management / Director</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Request Type */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Request Type</label>
-                        <Select
-                            value={form.request_type || ""}
-                            onValueChange={(value) =>
-                                handleSelectChange("request_type", value)
-                            }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Type" />
-                            </SelectTrigger>
-                            <SelectContent className="w-full">
-                                <SelectItem value="Advisory">Advisory</SelectItem>
-                                <SelectItem value="Incident">Incident</SelectItem>
-                                <SelectItem value="Maintenance">Maintenance Request</SelectItem>
-                                <SelectItem value="Major Incident">Major Incident</SelectItem>
-                                <SelectItem value="Incident / Service Request">Incident / Service Request</SelectItem>
-                                <SelectItem value="Request">Request</SelectItem>
-                                <SelectItem value="Service Request">Service Request</SelectItem>
-                                <SelectItem value="Service Request / Incident">Service Request / Incident</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Concern Type */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Type of Concern</label>
-                        <Select
-                            value={form.type_concern || ""}
-                            onValueChange={(value) =>
-                                handleSelectChange("type_concern", value)
-                            }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Concern" />
-                            </SelectTrigger>
-                            <SelectContent className="w-full">
-                                <SelectItem value="Incident">Incident</SelectItem>
-                                <SelectItem value="Request">Request</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Mode */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Mode</label>
-                        <Select
-                            value={form.mode || ""}
-                            onValueChange={(value) =>
-                                handleSelectChange("mode", value)
-                            }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Mode" />
-                            </SelectTrigger>
-                            <SelectContent className="w-full">
-                                <SelectItem value="Chat">Chat</SelectItem>
-                                <SelectItem value="Email">Email</SelectItem>
-                                <SelectItem value="Phone Call">Phone Call</SelectItem>
-                                <SelectItem value="System Directory">System Directory ( Ecodesk, Taskflow, Acculog Etc.)</SelectItem>
-                                <SelectItem value="Walk In">Walk In</SelectItem>
-                                <SelectItem value="Web Form">Web Form</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Group */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Services Group</label>
-                        <Select
-                            value={form.group_services || ""}
-                            onValueChange={(value) =>
-                                handleSelectChange("group_services", value)
-                            }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Service Group" />
-                            </SelectTrigger>
-                            <SelectContent className="w-full">
-                                <SelectItem value="Service Desk">Service Desk</SelectItem>
-                                <SelectItem value="System and Website Services">System and Website Services</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Site */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Site</label>
-                        <Select
-                            value={form.site || ""}
-                            onValueChange={(value) =>
-                                handleSelectChange("site", value)
-                            }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Site" />
-                            </SelectTrigger>
-                            <SelectContent className="w-full">
-                                <SelectItem value="Disruptive - Primex">Disruptive - Primex</SelectItem>
-                                <SelectItem value="Disruptive - J&L">Disruptive - J&L</SelectItem>
-                                <SelectItem value="Buildchem - Carmona">Buildchem - Carmona</SelectItem>
-                                <SelectItem value="Disruptive - Pasig">Disruptive - Pasig</SelectItem>
-                                <SelectItem value="Disruptive - CDO">Disruptive - CDO</SelectItem>
-                                <SelectItem value="Disruptive - Cebu">Disruptive - Cebu</SelectItem>
-                                <SelectItem value="Disruptive - Davao">Disruptive - Davao</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Priority */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Priority</label>
-                        <Select
-                            value={form.priority || ""}
-                            onValueChange={(value) =>
-                                handleSelectChange("priority", value)
-                            }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Site" />
-                            </SelectTrigger>
-                            <SelectContent className="w-full">
-                                <SelectItem value="Critical">P-1 - Critical (Response Time 15 Mins Max | Resolved Time 4 Hours Max) </SelectItem>
-                                <SelectItem value="High">P-2 - High (Response Time 1 Hour Max | Resolved Time 8 Hours Max) </SelectItem>
-                                <SelectItem value="Medium">P-3 - Medium (Response Time 4 Hour Max | Resolved Time 1-2 Days Max) </SelectItem>
-                                <SelectItem value="Low">P-4 - Low (Response Time 8 Hour Max | Resolved Time 3-4 Days Max) </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Status */}
-                    <div className="flex flex-col w-full">
-                        <label className="mb-1 text-xs font-medium">Status</label>
-                        <Select
-                            value={form.status || ""}
-                            onValueChange={(value) =>
-                                handleSelectChange("status", value)
-                            }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Status" />
-                            </SelectTrigger>
-                            <SelectContent className="w-full">
-                                <SelectItem value="Pending">Pending</SelectItem>
-                                <SelectItem value="Scheduled">Scheduled</SelectItem>
-                                <SelectItem value="Ongoing">Ongoing</SelectItem>
-                                <SelectItem value="Resolved">Resolved</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Remarks */}
-                    <div className="flex flex-col">
-                        <label className="mb-1 text-xs font-medium">Actions</label>
-                        <textarea
-                            name="remarks"
-                            value={form.remarks || ""}
-                            onChange={(e) =>
-                                handleSelectChange("remarks", e.target.value)
-                            }
-                            rows={5}
-                            placeholder="Actions"
-                            className="rounded-md border border-input bg-background p-2 text-sm resize-none"
-                        />
-                    </div>
-
-                    {/* Date Scheduled */}
-                    {form.status === "Scheduled" && (
-                        <div className="flex flex-col w-full mt-2">
-                            <label className="mb-1 text-xs font-medium">Date Scheduled</label>
+                        {/* Full Name */}
+                        <div className="flex flex-col">
+                            <label className="mb-1 text-xs font-medium">Full Name</label>
                             <Input
-                                type="date"
-                                name="date_scheduled"
-                                value={form.date_scheduled || ""}
+                                name="requestor_name"
+                                value={form.requestor_name || ""}
                                 onChange={handleInputChange}
+                                placeholder="Requester's Full Name"
+                                className="capitalize"
                             />
                         </div>
-                    )}
 
-                    {/* Date Created */}
-                    {form.status !== "Scheduled" && (
-                        <div className="flex flex-col w-full mt-2">
-                            <label className="mb-1 text-xs font-medium">Date Created</label>
+                        {/* Concern Type */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Ticket Subject</label>
                             <Input
-                                type="datetime-local"
-                                name="date_created"
-                                value={toDateTimeLocalString(form.date_created)}
-                                onChange={onDateCreatedChange}
+                                name="ticket_subject"
+                                value={form.ticket_subject || ""}
+                                onChange={handleInputChange}
+                                placeholder="Ticket Subject"
+                                className="capitalize"
                             />
                         </div>
-                    )}
 
-                    {form.status === "Resolved" && (
-                        <div className="flex flex-col w-full mt-2">
-                            <label className="mb-1 text-xs font-medium">Date Closed</label>
-                            <Input
-                                type="datetime-local"
-                                name="date_closed"
-                                value={toDateTimeLocalString(form.date_closed)}
-                                onChange={onDateClosedChange}
+                        {/* Department (SELECT) */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Department</label>
+
+                            <Select
+                                value={form.department || ""}
+                                onValueChange={(value) =>
+                                    handleSelectChange("department", value)
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select department" />
+                                </SelectTrigger>
+
+                                <SelectContent className="w-full">
+                                    <SelectItem value="Admin">Admin</SelectItem>
+                                    <SelectItem value="Accounting">Accounting</SelectItem>
+                                    <SelectItem value="Business Development">Business Development</SelectItem>
+                                    <SelectItem value="Customer Service Representative">Customer Service Representative</SelectItem>
+                                    <SelectItem value="Engineering">Engineering</SelectItem>
+                                    <SelectItem value="E-Commerce">E-Commerce</SelectItem>
+                                    <SelectItem value="Human Resources">Human Resources</SelectItem>
+                                    <SelectItem value="Information Technology">Information Technology</SelectItem>
+                                    <SelectItem value="Marketing">Marketing</SelectItem>
+                                    <SelectItem value="Procurement">Procurement</SelectItem>
+                                    <SelectItem value="Sales">Sales</SelectItem>
+                                    <SelectItem value="Warehouse Operations">Warehouse Operations</SelectItem>
+                                    <SelectItem value="Management">Management / Director</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Request Type */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Request Type</label>
+                            <Select
+                                value={form.request_type || ""}
+                                onValueChange={(value) =>
+                                    handleSelectChange("request_type", value)
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Type" />
+                                </SelectTrigger>
+                                <SelectContent className="w-full">
+                                    <SelectItem value="Advisory">Advisory</SelectItem>
+                                    <SelectItem value="Incident">Incident</SelectItem>
+                                    <SelectItem value="Maintenance">Maintenance Request</SelectItem>
+                                    <SelectItem value="Major Incident">Major Incident</SelectItem>
+                                    <SelectItem value="Incident / Service Request">Incident / Service Request</SelectItem>
+                                    <SelectItem value="Request">Request</SelectItem>
+                                    <SelectItem value="Service Request">Service Request</SelectItem>
+                                    <SelectItem value="Service Request / Incident">Service Request / Incident</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Concern Type */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Type of Concern</label>
+                            <Select
+                                value={form.type_concern || ""}
+                                onValueChange={(value) =>
+                                    handleSelectChange("type_concern", value)
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Concern" />
+                                </SelectTrigger>
+                                <SelectContent className="w-full">
+                                    <SelectItem value="Incident">Incident</SelectItem>
+                                    <SelectItem value="Request">Request</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Mode */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Mode</label>
+                            <Select
+                                value={form.mode || ""}
+                                onValueChange={(value) =>
+                                    handleSelectChange("mode", value)
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Mode" />
+                                </SelectTrigger>
+                                <SelectContent className="w-full">
+                                    <SelectItem value="Chat">Chat</SelectItem>
+                                    <SelectItem value="Email">Email</SelectItem>
+                                    <SelectItem value="Phone Call">Phone Call</SelectItem>
+                                    <SelectItem value="System Directory">System Directory ( Ecodesk, Taskflow, Acculog Etc.)</SelectItem>
+                                    <SelectItem value="Walk In">Walk In</SelectItem>
+                                    <SelectItem value="Web Form">Web Form</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Group */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Services Group</label>
+                            <Select
+                                value={form.group_services || ""}
+                                onValueChange={(value) =>
+                                    handleSelectChange("group_services", value)
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Service Group" />
+                                </SelectTrigger>
+                                <SelectContent className="w-full">
+                                    <SelectItem value="Service Desk">Service Desk</SelectItem>
+                                    <SelectItem value="System and Website Services">System and Website Services</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Site */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Site</label>
+                            <Select
+                                value={form.site || ""}
+                                onValueChange={(value) =>
+                                    handleSelectChange("site", value)
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Site" />
+                                </SelectTrigger>
+                                <SelectContent className="w-full">
+                                    <SelectItem value="Disruptive - Primex">Disruptive - Primex</SelectItem>
+                                    <SelectItem value="Disruptive - J&L">Disruptive - J&L</SelectItem>
+                                    <SelectItem value="Buildchem - Carmona">Buildchem - Carmona</SelectItem>
+                                    <SelectItem value="Disruptive - Pasig">Disruptive - Pasig</SelectItem>
+                                    <SelectItem value="Disruptive - CDO">Disruptive - CDO</SelectItem>
+                                    <SelectItem value="Disruptive - Cebu">Disruptive - Cebu</SelectItem>
+                                    <SelectItem value="Disruptive - Davao">Disruptive - Davao</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Priority */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Priority</label>
+                            <Select
+                                value={form.priority || ""}
+                                onValueChange={(value) =>
+                                    handleSelectChange("priority", value)
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Site" />
+                                </SelectTrigger>
+                                <SelectContent className="w-full">
+                                    <SelectItem value="Critical">P-1 - Critical (Response Time 15 Mins Max | Resolved Time 4 Hours Max) </SelectItem>
+                                    <SelectItem value="High">P-2 - High (Response Time 1 Hour Max | Resolved Time 8 Hours Max) </SelectItem>
+                                    <SelectItem value="Medium">P-3 - Medium (Response Time 4 Hour Max | Resolved Time 1-2 Days Max) </SelectItem>
+                                    <SelectItem value="Low">P-4 - Low (Response Time 8 Hour Max | Resolved Time 3-4 Days Max) </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Status */}
+                        <div className="flex flex-col w-full">
+                            <label className="mb-1 text-xs font-medium">Status</label>
+                            <Select
+                                value={form.status || ""}
+                                onValueChange={(value) =>
+                                    handleSelectChange("status", value)
+                                }
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent className="w-full">
+                                    <SelectItem value="Pending">Pending</SelectItem>
+                                    <SelectItem value="Scheduled">Scheduled</SelectItem>
+                                    <SelectItem value="Ongoing">Ongoing</SelectItem>
+                                    <SelectItem value="Resolved">Resolved</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Remarks */}
+                        <div className="flex flex-col">
+                            <label className="mb-1 text-xs font-medium">Actions</label>
+                            <textarea
+                                name="remarks"
+                                value={form.remarks || ""}
+                                onChange={(e) =>
+                                    handleSelectChange("remarks", e.target.value)
+                                }
+                                rows={5}
+                                placeholder="Actions"
+                                className="rounded-md border border-input bg-background p-2 text-sm resize-none"
                             />
                         </div>
-                    )}
 
-                </div>
+                        {/* Date Scheduled */}
+                        {form.status === "Scheduled" && (
+                            <div className="flex flex-col w-full mt-2">
+                                <label className="mb-1 text-xs font-medium">Date Scheduled</label>
+                                <Input
+                                    type="date"
+                                    name="date_scheduled"
+                                    value={form.date_scheduled || ""}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                        )}
 
-                <SheetFooter className="mt-6 flex justify-end gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={() => {
-                            setOpen(false);
-                            resetForm();
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button onClick={editingId ? handleUpdate : handleSubmit}>
-                        {editingId ? "Update" : "Create"}
-                    </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+                        {/* Date Created */}
+                        {form.status !== "Scheduled" && (
+                            <div className="flex flex-col w-full mt-2">
+                                <label className="mb-1 text-xs font-medium">Date Created</label>
+                                <Input
+                                    type="datetime-local"
+                                    name="date_created"
+                                    value={toDateTimeLocalString(form.date_created)}
+                                    onChange={onDateCreatedChange}
+                                />
+                            </div>
+                        )}
+
+                        {form.status === "Resolved" && (
+                            <div className="flex flex-col w-full mt-2">
+                                <label className="mb-1 text-xs font-medium">Date Closed</label>
+                                <Input
+                                    type="datetime-local"
+                                    name="date_closed"
+                                    value={toDateTimeLocalString(form.date_closed)}
+                                    onChange={onDateClosedChange}
+                                />
+                            </div>
+                        )}
+
+                    </div>
+
+                    <SheetFooter className="mt-6 flex justify-end gap-2">
+                        <Button onClick={handleAttemptClose} variant="outline">
+                            Cancel
+                        </Button>
+                        <Button onClick={editingId ? handleUpdate : handleSubmit}>
+                            {editingId ? "Update" : "Create"}
+                        </Button>
+                    </SheetFooter>
+                </SheetContent>
+            </Sheet>
+
+            <Dialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
+                <DialogContent className="sm:max-w-[400px] w-full p-6">
+                    <DialogHeader>
+                        <DialogTitle>Discard changes?</DialogTitle>
+                        <DialogDescription>
+                            You have unsaved changes. Are you sure you want to close and reset the form?
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="mt-6 flex justify-end gap-2">
+                        <Button variant="outline" onClick={cancelClose}>
+                            Cancel
+                        </Button>
+                        <Button onClick={confirmClose}>Discard</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 };
