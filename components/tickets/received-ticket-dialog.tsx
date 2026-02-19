@@ -455,6 +455,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                     <SelectItem value="Disruptive - CDO">Disruptive - CDO</SelectItem>
                                     <SelectItem value="Disruptive - Cebu">Disruptive - Cebu</SelectItem>
                                     <SelectItem value="Disruptive - Davao">Disruptive - Davao</SelectItem>
+                                    <SelectItem value="Disruptive - Davao">Disruptive - Granville</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
