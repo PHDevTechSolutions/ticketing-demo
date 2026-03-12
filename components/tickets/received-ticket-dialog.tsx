@@ -636,10 +636,40 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                             </div>
                         )}
 
-                        {/* Proof of Completion */}
-                        {/* Proof of Completion */}
                         {form.status === "Resolved" && (
-                            <div className="flex flex-col w-full mt-2">
+                            <div
+                                className="flex flex-col w-full mt-2"
+                                onPaste={async (e: React.ClipboardEvent<HTMLDivElement>) => {
+                                    const items = e.clipboardData.items;
+                                    for (const item of items) {
+                                        if (item.type.startsWith("image/")) {
+                                            const file = item.getAsFile();
+                                            if (!file) return;
+
+                                            try {
+                                                const data = new FormData();
+                                                data.append("file", file);
+                                                data.append("upload_preset", "Xchire");
+                                                data.append("folder", "proof_of_completion");
+
+                                                const res = await fetch(
+                                                    "https://api.cloudinary.com/v1_1/dhczsyzcz/auto/upload",
+                                                    { method: "POST", body: data }
+                                                );
+
+                                                const uploaded = await res.json();
+                                                const url = uploaded.secure_url;
+
+                                                handleSelectChange("proof_of_completion", url);
+
+                                            } catch (err) {
+                                                console.error("Upload failed", err);
+
+                                            }
+                                        }
+                                    }
+                                }}
+                            >
                                 <label className="mb-1 text-xs font-medium">Proof of Completion</label>
 
                                 {/* Existing uploaded proof as a link */}
@@ -685,15 +715,20 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                             const uploaded = await res.json();
                                             const url = uploaded.secure_url;
 
-                                            // Set single proof URL
                                             handleSelectChange("proof_of_completion", url);
+
                                         } catch (err) {
                                             console.error("Upload failed", err);
+
                                         } finally {
                                             e.target.value = ""; // reset input
                                         }
                                     }}
                                 />
+
+                                <p className="text-xs text-gray-500 mt-1 border p-2 border-red-500">
+                                    Click This and paste an image from clipboard or upload a file.
+                                </p>
                             </div>
                         )}
 
