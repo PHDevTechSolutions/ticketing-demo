@@ -1,19 +1,38 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { connectToDatabase } from "@/lib/mongodb";
+import { MongoClient, Db } from "mongodb";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_DB = process.env.MONGODB_DB;
+
+let cachedClient: MongoClient | null = null;
+let cachedDb: Db | null = null;
+
+// Helper to connect to MongoDB
+async function connectToMongo(): Promise<Db> {
+  if (cachedDb && cachedClient) return cachedDb;
+
+  if (!MONGODB_URI) throw new Error("Missing MONGODB_URI environment variable");
+  if (!MONGODB_DB) throw new Error("Missing MONGODB_DB environment variable");
+
+  const client = new MongoClient(MONGODB_URI);
+  await client.connect();
+  const db = client.db(MONGODB_DB);
+
+  cachedClient = client;
+  cachedDb = db;
+  return db;
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.setHeader("Allow", ["GET"]);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
   }
 
   try {
-    const db = await connectToDatabase();
+    const db = await connectToMongo();
 
-    // Fetch ALL users (no TSM filter)
+    // Fetch ALL users
     const users = await db
       .collection("users")
       .find({})
@@ -26,7 +45,7 @@ export default async function handler(
       })
       .toArray();
 
-    if (users.length === 0) {
+    if (!users || users.length === 0) {
       return res.status(404).json({ error: "No users found" });
     }
 

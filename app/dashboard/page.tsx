@@ -62,6 +62,8 @@ interface RequestItem {
   priority: string;
   date_created?: string;
   processed_by: string;
+  closed_by: string;
+  department: string;
 }
 
 interface UserDetails {
@@ -220,14 +222,14 @@ function DashboardContent() {
 
     const toTime = dateCreatedFilterRange.to
       ? new Date(
-          dateCreatedFilterRange.to.getFullYear(),
-          dateCreatedFilterRange.to.getMonth(),
-          dateCreatedFilterRange.to.getDate(),
-          23,
-          59,
-          59,
-          999
-        ).getTime()
+        dateCreatedFilterRange.to.getFullYear(),
+        dateCreatedFilterRange.to.getMonth(),
+        dateCreatedFilterRange.to.getDate(),
+        23,
+        59,
+        59,
+        999
+      ).getTime()
       : Infinity;
 
     return activities.filter((item) => {
@@ -274,13 +276,6 @@ function DashboardContent() {
     );
   }, [filteredActivities]);
 
-  // Normalize processor key for grouping (lowercase + trimmed, fallback to 'unassigned')
-  const normalizeProcessorKey = (str?: string) => {
-    if (!str) return "unassigned";
-    const trimmed = str.trim();
-    return trimmed === "" ? "unassigned" : trimmed.toLowerCase();
-  };
-
   // Format processor name for display (capitalize each word)
   const formatProcessorName = (key: string) => {
     if (key === "unassigned") return "Unassigned";
@@ -290,6 +285,25 @@ function DashboardContent() {
         (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
       )
       .join(" ");
+  };
+
+  // Normalize processor key for grouping (fuzzy)
+  const normalizeProcessorKey = (str?: string) => {
+    if (!str) return "unassigned";
+
+    // Trim, lowercase
+    let key = str.trim().toLowerCase();
+
+    // Replace multiple spaces with single space
+    key = key.replace(/\s+/g, " ");
+
+    // Remove spaces around commas
+    key = key.replace(/\s*,\s*/g, ", ");
+
+    // Remove trailing/leading commas
+    key = key.replace(/^,|,$/g, "");
+
+    return key || "unassigned";
   };
 
   const groupedByProcessor = React.useMemo(() => {
@@ -326,6 +340,26 @@ function DashboardContent() {
     });
     return config satisfies ChartConfig;
   }, [barChartData]);
+
+  // Count tickets per requestor_name
+  const countsByRequestor = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of filteredActivities) {
+      const key = item.closed_by?.trim() || "Unknown";
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    return counts;
+  }, [filteredActivities]);
+
+  // Count tickets per department
+  const countsByDepartment = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of filteredActivities) {
+      const key = item.department?.trim() || "Unknown";
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    return counts;
+  }, [filteredActivities]);
 
   return (
     <>
@@ -466,7 +500,7 @@ function DashboardContent() {
                             key={processorKey}
                             className="odd:bg-background even:bg-muted/50 hover:bg-muted/80 transition-colors"
                           >
-                            <TableCell>{formatProcessorName(processorKey)}</TableCell>
+                            <TableCell className="uppercase">{formatProcessorName(processorKey)}</TableCell>
                             <TableCell className="text-right font-medium">{tickets.length}</TableCell>
                           </TableRow>
                         ))}
@@ -517,6 +551,57 @@ function DashboardContent() {
                       Showing ticket distribution per processed by user
                     </div>
                   </CardFooter>
+                </Card>
+              </div>
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Requestor Name Count */}
+                <Card className="flex-1">
+                  <CardHeader>
+                    <CardTitle>Tickets per Closed By</CardTitle>
+                  </CardHeader>
+                  <CardContent className="overflow-auto p-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Requestor Name</TableHead>
+                          <TableHead className="text-right">Total Tickets</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Object.entries(countsByRequestor).map(([name, count]) => (
+                          <TableRow key={name}>
+                            <TableCell className="uppercase">{name}</TableCell>
+                            <TableCell className="text-right font-medium">{count}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {/* Department Count */}
+                <Card className="flex-1">
+                  <CardHeader>
+                    <CardTitle>Tickets per Department</CardTitle>
+                  </CardHeader>
+                  <CardContent className="overflow-auto p-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Department</TableHead>
+                          <TableHead className="text-right">Total Tickets</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Object.entries(countsByDepartment).map(([dept, count]) => (
+                          <TableRow key={dept}>
+                            <TableCell className="uppercase">{dept}</TableCell>
+                            <TableCell className="text-right font-medium">{count}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
                 </Card>
               </div>
             </>

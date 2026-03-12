@@ -13,15 +13,6 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { type DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-  SelectGroup,
-  SelectLabel,
-} from "@/components/ui/select"
 import { ReceivedDialog } from "@/components/tickets/received-ticket-dialog";
 import { supabase } from "@/utils/supabase"; // adjust path if needed
 
@@ -45,6 +36,7 @@ interface RequestItem {
     closed_by: string;
     date_created?: string;
     date_closed?: string;
+    proof_of_completion?: string;
 }
 
 interface RequestProps {
@@ -105,6 +97,7 @@ export const Received: React.FC<RequestProps> = ({
         processed_by: "",
         closed_by: "",
         date_created: "",
+        proof_of_completion: "",
     });
 
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -112,7 +105,7 @@ export const Received: React.FC<RequestProps> = ({
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const existingTicketIds = activities.map(item => item.ticket_id);
 
-    function handleSelectChange(name: string, value: string) {
+    function handleSelectChange(name: string, value: string | string[]) {
         setForm((prev) => ({
             ...prev,
             [name]: value,
@@ -232,7 +225,6 @@ export const Received: React.FC<RequestProps> = ({
         });
     }, [activities, search, dateCreatedFilterRange, statusFilter, requestTypeFilter, priorityFilter]);
 
-
     const pageCount = Math.ceil(filteredActivities.length / PAGE_SIZE);
 
     const paginatedActivities = useMemo(() => {
@@ -287,7 +279,6 @@ export const Received: React.FC<RequestProps> = ({
         resetForm();
     }
 
-
     function resetForm() {
         setForm({
             ticket_id: "",
@@ -331,6 +322,7 @@ export const Received: React.FC<RequestProps> = ({
             processed_by: item.processed_by ?? "",
             closed_by: fullname ?? "",
             date_created: item.date_created ?? "",
+            proof_of_completion: item.proof_of_completion ?? "",
         });
         setOpen(true);
     }
@@ -702,6 +694,7 @@ export const Received: React.FC<RequestProps> = ({
                                 <TableHead>
                                     <input
                                         type="checkbox"
+                                        className="h-5 w-5"
                                         onChange={toggleSelectAll}
                                         checked={
                                             paginatedActivities.length > 0 &&
@@ -739,6 +732,7 @@ export const Received: React.FC<RequestProps> = ({
                                     <TableCell>
                                         <input
                                             type="checkbox"
+                                            className="h-5 w-5"
                                             checked={selectedIds.has(item.id)}
                                             onChange={() => toggleSelect(item.id)}
                                             aria-label={`Select item ${item.requestor_name || item.id}`}

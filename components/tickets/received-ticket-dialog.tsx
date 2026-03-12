@@ -33,7 +33,8 @@ interface TicketDialogProps {
     editingId?: string | null;
     form: Record<string, any>;
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    handleSelectChange: (name: string, value: string) => void;
+    // change this line:
+    handleSelectChange: (name: string, value: string | string[]) => void;
     handleSubmit: () => void;
     handleUpdate: () => void;
     resetForm: () => void;
@@ -92,7 +93,6 @@ function toISOStringFromLocalDateTime(localDateTime: string): string {
     return date.toISOString();
 }
 
-
 export const ReceivedDialog: React.FC<TicketDialogProps> = ({
     open,
     setOpen,
@@ -108,6 +108,30 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
 }) => {
     const [showConfirmClose, setShowConfirmClose] = useState(false);
     const initializedRef = useRef(false);
+
+    const [users, setUsers] = useState<{ Firstname: string; Lastname: string; ReferenceID: string }[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+    const [errorUsers, setErrorUsers] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            setLoadingUsers(true);
+            setErrorUsers(null);
+            try {
+                const res = await fetch("/api/fetch-all-user");
+                if (!res.ok) throw new Error("Failed to fetch users");
+                const data = await res.json();
+                setUsers(data);
+            } catch (err: any) {
+                console.error(err);
+                setErrorUsers(err.message || "Error fetching users");
+            } finally {
+                setLoadingUsers(false);
+            }
+        };
+        fetchUsers();
+    }, []);
 
     useEffect(() => {
         if (open && !editingId && !initializedRef.current) {
@@ -207,6 +231,21 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
         }
     }, [open, editingId]);
 
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+
+
     return (
         <>
             <Sheet
@@ -293,16 +332,57 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                             </Alert>
                         </div>
 
-                        {/* Full Name */}
-                        <div className="flex flex-col">
-                            <label className="mb-1 text-xs font-medium">Full Name</label>
-                            <Input
-                                name="requestor_name"
-                                value={form.requestor_name || ""}
-                                onChange={handleInputChange}
-                                placeholder="Requester's Full Name"
-                                className="capitalize"
-                            />
+                        {/* Full Name (Requestor) */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 text-xs font-medium">Requestor Name</label>
+
+                            {loadingUsers ? (
+                                <div>Loading users...</div>
+                            ) : errorUsers ? (
+                                <div className="text-red-600 text-sm">{errorUsers}</div>
+                            ) : (
+                                <>
+                                    <Input
+                                        type="text"
+                                        placeholder="Search requestor..."
+                                        value={searchQuery}
+                                        onChange={(e) => {
+                                            setSearchQuery(e.target.value);
+                                            setIsDropdownOpen(true); // open dropdown when typing
+                                        }}
+                                        className="mb-1"
+                                        onFocus={() => setIsDropdownOpen(true)} // open on focus
+                                    />
+
+                                    {isDropdownOpen && searchQuery && (
+                                        <div
+                                            ref={dropdownRef}
+                                            className="absolute z-50 w-full max-h-60 overflow-auto rounded-md border bg-white shadow-md"
+                                        >
+                                            {users
+                                                .filter((u) =>
+                                                    `${u.Lastname}, ${u.Firstname}`
+                                                        .toLowerCase()
+                                                        .includes(searchQuery.toLowerCase())
+                                                )
+                                                .map((user) => (
+                                                    <div
+                                                        key={user.ReferenceID}
+                                                        className="px-3 py-2 hover:bg-indigo-100 cursor-pointer"
+                                                        onClick={() => {
+                                                            const fullName = `${user.Lastname}, ${user.Firstname}`;
+                                                            handleSelectChange("requestor_name", fullName);
+                                                            setSearchQuery(fullName);
+                                                            setIsDropdownOpen(false); // close dropdown on select
+                                                        }}
+                                                    >
+                                                        {user.Lastname}, {user.Firstname}
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         {/* Concern Type */}
@@ -551,6 +631,67 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                     name="date_closed"
                                     value={toDateTimeLocalString(form.date_closed)}
                                     onChange={onDateClosedChange}
+                                />
+                            </div>
+                        )}
+
+                        {/* Proof of Completion */}
+                        {/* Proof of Completion */}
+                        {form.status === "Resolved" && (
+                            <div className="flex flex-col w-full mt-2">
+                                <label className="mb-1 text-xs font-medium">Proof of Completion</label>
+
+                                {/* Existing uploaded proof as a link */}
+                                {form.proof_of_completion && (
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <a
+                                            href={form.proof_of_completion}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 underline text-sm"
+                                        >
+                                            View Proof
+                                        </a>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSelectChange("proof_of_completion", "")}
+                                            className="bg-red-500 text-white rounded px-1 text-xs"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Upload button */}
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                        if (!e.target.files || !e.target.files[0]) return;
+
+                                        const file = e.target.files[0];
+                                        try {
+                                            const data = new FormData();
+                                            data.append("file", file);
+                                            data.append("upload_preset", "Xchire");
+                                            data.append("folder", "proof_of_completion");
+
+                                            const res = await fetch(
+                                                "https://api.cloudinary.com/v1_1/dhczsyzcz/auto/upload",
+                                                { method: "POST", body: data }
+                                            );
+
+                                            const uploaded = await res.json();
+                                            const url = uploaded.secure_url;
+
+                                            // Set single proof URL
+                                            handleSelectChange("proof_of_completion", url);
+                                        } catch (err) {
+                                            console.error("Upload failed", err);
+                                        } finally {
+                                            e.target.value = ""; // reset input
+                                        }
+                                    }}
                                 />
                             </div>
                         )}
