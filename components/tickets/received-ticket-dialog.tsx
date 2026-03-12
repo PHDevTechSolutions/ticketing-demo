@@ -422,6 +422,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                     <SelectItem value="Information Technology">Information Technology</SelectItem>
                                     <SelectItem value="Marketing">Marketing</SelectItem>
                                     <SelectItem value="Procurement">Procurement</SelectItem>
+                                    <SelectItem value="Product Development">Product Development</SelectItem>
                                     <SelectItem value="Sales">Sales</SelectItem>
                                     <SelectItem value="Warehouse Operations">Warehouse Operations</SelectItem>
                                     <SelectItem value="Management">Management / Director</SelectItem>
