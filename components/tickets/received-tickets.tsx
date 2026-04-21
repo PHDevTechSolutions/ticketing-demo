@@ -474,30 +474,30 @@ export const Received: React.FC<RequestProps> = ({
     function getPriorityBadgeVariant(priority?: string) {
         switch (priority) {
             case "Critical":
-                return "destructive"; // 🔴 Red
+                return "critical";
             case "High":
-                return "secondary"; // 🟠 Orange / Yellow-ish
+                return "high";
             case "Medium":
-                return "default"; // 🔵 Blue
+                return "medium";
             case "Low":
-                return "outline"; // ⚪ Gray / Outline
+                return "low";
             default:
-                return "secondary";
+                return "outline";
         }
     }
 
     function getStatusBadge(status?: string) {
         switch (status) {
             case "Ongoing":
-                return "bg-orange-500 text-white";
+                return "bg-orange-500/20 text-orange-400 border border-orange-500/50 shadow-[0_0_10px_rgba(249,115,22,0.3)]";
             case "Pending":
-                return "bg-gray-100 text-gray-800";
+                return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
             case "Resolved":
-                return "bg-green-500 text-white";
+                return "bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.3)]";
             case "Scheduled":
-                return "bg-yellow-500 text-white";
+                return "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30";
             default:
-                return "bg-secondary text-white"; // fallback
+                return "bg-white/10 text-white/70 border border-white/20"; // fallback
         }
     }
 
@@ -609,22 +609,22 @@ export const Received: React.FC<RequestProps> = ({
 
     if (errorActivities) {
         return (
-            <Alert variant="destructive" className="flex flex-col space-y-4 p-4 text-xs">
+            <Alert className="flex flex-col space-y-4 p-4 text-xs glass-card border-red-500/30">
                 <div className="flex items-center space-x-3">
-                    <AlertCircleIcon className="h-6 w-6 text-red-600" />
+                    <AlertCircleIcon className="h-6 w-6 text-red-400" />
                     <div>
-                        <AlertTitle>No Data Found or No Network Connection</AlertTitle>
-                        <AlertDescription className="text-xs">
+                        <AlertTitle className="text-red-400">No Data Found or No Network Connection</AlertTitle>
+                        <AlertDescription className="text-xs text-white/60">
                             Please check your internet connection or try again later.
                         </AlertDescription>
                     </div>
                 </div>
 
                 <div className="flex items-center space-x-3">
-                    <CheckCircle2Icon className="h-6 w-6 text-green-600" />
+                    <CheckCircle2Icon className="h-6 w-6 text-emerald-400" />
                     <div>
-                        <AlertTitle className="text-black">Create New Data</AlertTitle>
-                        <AlertDescription className="text-xs">
+                        <AlertTitle className="text-white/90">Create New Data</AlertTitle>
+                        <AlertDescription className="text-xs text-white/60">
                             You can start by adding new entries to populate your database.
                         </AlertDescription>
                     </div>
@@ -634,13 +634,13 @@ export const Received: React.FC<RequestProps> = ({
     }
 
     return (
-        <Card className="w-full p-4 rounded-xl flex flex-col">
-            <CardHeader className="p-0 mb-2">
+        <Card className="w-full p-6 rounded-xl flex flex-col glass-card">
+            <CardHeader className="p-0 mb-4">
                 <div className="flex items-center justify-between">
                     {/* Left side: Search bar */}
                     <Input
                         placeholder="Search Tickets..."
-                        className="text-xs max-w-[400px]"
+                        className="text-sm max-w-[400px] bg-[#0a0a0f] border-white/10 text-white placeholder:text-white/40"
                         value={search}
                         onChange={(e) => {
                             setSearch(e.target.value);
@@ -651,16 +651,16 @@ export const Received: React.FC<RequestProps> = ({
 
                     {/* Right side: buttons grouped */}
                     <div className="flex items-center space-x-2">
-                        <Button variant="outline" onClick={() => setFilterOpen(true)}>
+                        <Button variant="outline" onClick={() => setFilterOpen(true)} className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white">
                             Filters
                         </Button>
 
-                        <Button onClick={downloadCSV} variant="outline">
+                        <Button onClick={downloadCSV} variant="outline" className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white">
                             Download CSV
                         </Button>
 
                         {selectedIds.size > 0 && (
-                            <Button variant="destructive" onClick={handleDeleteSelected}>
+                            <Button variant="destructive" onClick={handleDeleteSelected} className="bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30">
                                 Delete Selected ({selectedIds.size})
                             </Button>
                         )}
@@ -670,6 +670,8 @@ export const Received: React.FC<RequestProps> = ({
                                 resetForm();
                                 setOpen(true);
                             }}
+                            variant="neon"
+                            className="neon-button"
                         >
                             Create Ticket
                         </Button>
@@ -680,10 +682,10 @@ export const Received: React.FC<RequestProps> = ({
 
             {loadingActivities ? (
                 <div className="flex justify-center py-10">
-                    <Spinner />
+                    <Spinner className="text-primary" />
                 </div>
             ) : filteredActivities.length === 0 ? (
-                <div className="text-muted-foreground text-sm p-3 border rounded-lg text-center">
+                <div className="text-white/50 text-sm p-4 border border-white/10 rounded-lg text-center glass-card">
                     No ticket data available.
                 </div>
             ) : (
@@ -728,7 +730,7 @@ export const Received: React.FC<RequestProps> = ({
                         </TableHeader>
                         <TableBody>
                             {paginatedActivities.map((item) => (
-                                <TableRow key={item.id} className="odd:bg-white even:bg-gray-50">
+                                <TableRow key={item.id}>
                                     <TableCell>
                                         <input
                                             type="checkbox"
@@ -798,9 +800,9 @@ export const Received: React.FC<RequestProps> = ({
                         </TableBody>
                     </Table>
 
-                    <div className="flex justify-end mt-4">
+                    <div className="flex justify-end mt-6">
                         <Pagination>
-                            <PaginationContent className="flex items-center space-x-4">
+                            <PaginationContent className="flex items-center space-x-4 bg-[#0a0a0f] rounded-lg border border-white/10 px-4 py-2">
                                 <PaginationItem>
                                     <PaginationPrevious
                                         href="#"
@@ -809,11 +811,11 @@ export const Received: React.FC<RequestProps> = ({
                                             if (page > 1) setPage(page - 1);
                                         }}
                                         aria-disabled={page <= 1}
-                                        className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                                        className={page <= 1 ? "pointer-events-none opacity-30 text-white/50" : "text-white/70 hover:text-white hover:bg-white/10"}
                                     />
                                 </PaginationItem>
 
-                                <div className="px-4 font-medium">
+                                <div className="px-4 font-medium text-white/80">
                                     {pageCount === 0 ? "0 / 0" : `${page} / ${pageCount}`}
                                 </div>
 
@@ -825,7 +827,7 @@ export const Received: React.FC<RequestProps> = ({
                                             if (page < pageCount) setPage(page + 1);
                                         }}
                                         aria-disabled={page >= pageCount}
-                                        className={page >= pageCount ? "pointer-events-none opacity-50" : ""}
+                                        className={page >= pageCount ? "pointer-events-none opacity-30 text-white/50" : "text-white/70 hover:text-white hover:bg-white/10"}
                                     />
                                 </PaginationItem>
                             </PaginationContent>
@@ -835,20 +837,20 @@ export const Received: React.FC<RequestProps> = ({
             )}
 
             <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md glass-card border-white/10">
                     <DialogHeader>
-                        <DialogTitle>Filter Tickets</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-white/90 gradient-text">Filter Tickets</DialogTitle>
+                        <DialogDescription className="text-white/50">
                             Apply filters to narrow down the ticket list.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {/* Status Filter */}
                         <div>
-                            <label htmlFor="status" className="block font-medium text-sm mb-1">Status</label>
+                            <label htmlFor="status" className="block font-medium text-sm mb-1 text-white/80">Status</label>
                             <select
                                 id="status"
-                                className="w-full border rounded px-2 py-1"
+                                className="w-full bg-[#0a0a0f] border border-white/10 rounded px-3 py-2 text-white/90 focus:border-primary focus:ring-1 focus:ring-primary"
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
@@ -862,15 +864,14 @@ export const Received: React.FC<RequestProps> = ({
 
                         {/* Request Type Filter */}
                         <div>
-                            <label htmlFor="requestType" className="block font-medium text-sm mb-1">Request Type</label>
+                            <label htmlFor="requestType" className="block font-medium text-sm mb-1 text-white/80">Request Type</label>
                             <select
                                 id="requestType"
-                                className="w-full border rounded px-2 py-1"
+                                className="w-full bg-[#0a0a0f] border border-white/10 rounded px-3 py-2 text-white/90 focus:border-primary focus:ring-1 focus:ring-primary"
                                 value={requestTypeFilter}
                                 onChange={(e) => setRequestTypeFilter(e.target.value)}
                             >
                                 <option value="">All</option>
-                                {/* Add the possible request types you expect */}
                                 <option value="Advisory">Advisory</option>
                                 <option value="Incident">Incident</option>
                                 <option value="Request">Request</option>
@@ -879,10 +880,10 @@ export const Received: React.FC<RequestProps> = ({
 
                         {/* Priority Filter */}
                         <div>
-                            <label htmlFor="priority" className="block font-medium text-sm mb-1">Priority</label>
+                            <label htmlFor="priority" className="block font-medium text-sm mb-1 text-white/80">Priority</label>
                             <select
                                 id="priority"
-                                className="w-full border rounded px-2 py-1"
+                                className="w-full bg-[#0a0a0f] border border-white/10 rounded px-3 py-2 text-white/90 focus:border-primary focus:ring-1 focus:ring-primary"
                                 value={priorityFilter}
                                 onChange={(e) => setPriorityFilter(e.target.value)}
                             >
@@ -903,10 +904,11 @@ export const Received: React.FC<RequestProps> = ({
                                 setRequestTypeFilter("");
                                 setPriorityFilter("");
                             }}
+                            className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
                         >
                             Clear Filters
                         </Button>
-                        <Button onClick={() => setFilterOpen(false)}>Apply</Button>
+                        <Button onClick={() => setFilterOpen(false)} variant="neon" className="neon-button">Apply</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -927,21 +929,21 @@ export const Received: React.FC<RequestProps> = ({
 
 
             <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md glass-card border-red-500/30">
                     <DialogHeader>
-                        <DialogTitle>Confirm Deletion</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-red-400">Confirm Deletion</DialogTitle>
+                        <DialogDescription className="text-white/60">
                             Are you sure you want to delete{" "}
-                            <strong>{selectedIds.size}</strong> selected item
+                            <strong className="text-white/90">{selectedIds.size}</strong> selected item
                             {selectedIds.size > 1 ? "s" : ""}?
                         </DialogDescription>
                     </DialogHeader>
 
                     <DialogFooter className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+                        <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)} className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white">
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={confirmDeletion}>
+                        <Button variant="destructive" onClick={confirmDeletion} className="bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30">
                             Delete
                         </Button>
                     </DialogFooter>

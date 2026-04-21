@@ -364,18 +364,18 @@ function DashboardContent() {
   return (
     <>
       <SidebarLeft />
-      <SidebarInset>
-        <header className="bg-background sticky top-0 flex h-14 shrink-0 items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 px-3">
-            <SidebarTrigger />
+      <SidebarInset className="bg-black">
+        <header className="bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-[rgba(255,255,255,0.1)] sticky top-0 flex h-14 shrink-0 items-center gap-2 z-10">
+          <div className="flex flex-1 items-center gap-2 px-4">
+            <SidebarTrigger className="text-white/70 hover:text-white hover:bg-white/10" />
             <Separator
               orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
+              className="mr-2 data-[orientation=vertical]:h-4 bg-white/20"
             />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1">
+                  <BreadcrumbPage className="line-clamp-1 text-white/90 font-medium">
                     Dashboard
                   </BreadcrumbPage>
                 </BreadcrumbItem>
@@ -383,30 +383,40 @@ function DashboardContent() {
             </Breadcrumb>
           </div>
         </header>
-        <main className="flex flex-col gap-4 p-4 overflow-auto">
+        <main className="flex flex-col gap-6 p-6 overflow-auto bg-gradient-to-b from-black to-[#0a0a0f] min-h-[calc(100vh-3.5rem)]">
           {loadingUser ? (
-            <p>Loading user data...</p>
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-pulse text-white/60">Loading user data...</div>
+            </div>
           ) : errorUser ? (
-            <p className="text-red-600 font-semibold">{errorUser}</p>
+            <div className="glass-card p-4 rounded-lg border border-red-500/30">
+              <p className="text-red-400 font-semibold">{errorUser}</p>
+            </div>
           ) : (
             <>
-              {loadingActivities && <p>Loading activities...</p>}
+              {loadingActivities && (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-pulse text-white/60">Loading activities...</div>
+                </div>
+              )}
               {errorActivities && (
-                <p className="text-red-600 font-semibold">{errorActivities}</p>
+                <div className="glass-card p-4 rounded-lg border border-red-500/30">
+                  <p className="text-red-400 font-semibold">{errorActivities}</p>
+                </div>
               )}
 
               {advisoryTickets.length > 0 && (
-                <div className="w-full">
-                  <Alert className="w-full border-orange-500 bg-orange-50">
-                    <AlertTitle className="font-semibold text-orange-700">
+                <div className="w-full animate-fade-in">
+                  <Alert className="w-full border-orange-500/50 bg-[rgba(249,115,22,0.1)] backdrop-blur-sm">
+                    <AlertTitle className="font-semibold text-orange-400">
                       Advisory Notice
                     </AlertTitle>
 
-                    <AlertDescription className="space-y-4 text-sm leading-relaxed">
+                    <AlertDescription className="space-y-4 text-sm leading-relaxed text-white/80">
                       {advisoryTickets.map((item) => (
                         <div
                           key={item.id}
-                          className="w-full rounded-md border bg-white p-4"
+                          className="w-full rounded-md border border-orange-500/20 bg-[#0a0a0f]/80 p-4 backdrop-blur-sm"
                         >
                           <p>
                             This ticket is classified as an <strong>{item.request_type}</strong> request
@@ -434,17 +444,17 @@ function DashboardContent() {
               )}
 
               {criticalTickets.length > 0 && (
-                <div className="w-full">
-                  <Alert className="w-full border-red-600 bg-red-50">
-                    <AlertTitle className="font-semibold text-red-700">
+                <div className="w-full animate-fade-in">
+                  <Alert className="w-full border-red-500/50 bg-[rgba(239,68,68,0.1)] backdrop-blur-sm shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                    <AlertTitle className="font-semibold text-red-400">
                       🚨 Critical Priority Alert
                     </AlertTitle>
 
-                    <AlertDescription className="space-y-4 text-sm leading-relaxed">
+                    <AlertDescription className="space-y-4 text-sm leading-relaxed text-white/80">
                       {criticalTickets.map((item) => (
                         <div
                           key={item.id}
-                          className="w-full rounded-md border border-red-200 bg-white p-4"
+                          className="w-full rounded-md border border-red-500/20 bg-[#0a0a0f]/80 p-4 backdrop-blur-sm"
                         >
                           <p>
                             This ticket is marked as <strong>CRITICAL PRIORITY</strong> and
@@ -483,7 +493,7 @@ function DashboardContent() {
                 {/* Table Card */}
                 <Card className="flex-1">
                   <CardHeader>
-                    <CardTitle>Tickets Count per Processed By</CardTitle>
+                    <CardTitle className="text-white/90 gradient-text">Tickets Count per Processed By</CardTitle>
                   </CardHeader>
                   <CardContent className="overflow-auto p-4">
                     <Table>
@@ -498,10 +508,9 @@ function DashboardContent() {
                         {sortedGroupedByProcessor.map(([processorKey, tickets]) => (
                           <TableRow
                             key={processorKey}
-                            className="odd:bg-background even:bg-muted/50 hover:bg-muted/80 transition-colors"
                           >
-                            <TableCell className="uppercase">{formatProcessorName(processorKey)}</TableCell>
-                            <TableCell className="text-right font-medium">{tickets.length}</TableCell>
+                            <TableCell className="uppercase text-white/70">{formatProcessorName(processorKey)}</TableCell>
+                            <TableCell className="text-right font-medium text-primary">{tickets.length}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -512,8 +521,8 @@ function DashboardContent() {
                 {/* Bar Chart Card */}
                 <Card className="flex-1 flex flex-col">
                   <CardHeader className="items-center pb-0">
-                    <CardTitle>Tickets Distribution</CardTitle>
-                    <CardDescription>Grouped by Processed By</CardDescription>
+                    <CardTitle className="text-white/90 gradient-text">Tickets Distribution</CardTitle>
+                    <CardDescription className="text-white/50">Grouped by Processed By</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-1 pb-0">
                     <ChartContainer

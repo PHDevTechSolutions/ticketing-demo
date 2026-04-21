@@ -121,12 +121,12 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
   );
 
   return (
-    <Sidebar className="border-r-0" {...props}>
-      <SidebarHeader>
+    <Sidebar className="border-r border-[rgba(255,255,255,0.1)] bg-[#0a0a0f]" {...props}>
+      <SidebarHeader className="border-b border-[rgba(255,255,255,0.1)] p-4">
         <TeamSwitcher />
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2 py-4">
         <NavFavorites favorites={favoritesWithId} />
         <NavWorkspaces
           workspaces={workspacesWithId}
@@ -136,7 +136,7 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={navSecondaryWithId} className="mt-auto" />
       </SidebarContent>
 
-      <SidebarRail />
+      <SidebarRail className="bg-[#0a0a0f]" />
     </Sidebar>
   );
 }

@@ -86,16 +86,16 @@ function toISOFromLocal(local: string): string {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <label className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+    <label className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/60">
         {children}
     </label>
 );
 
 const SectionHeader: React.FC<{ icon: string; title: string }> = ({ icon, title }) => (
-    <div className="flex items-center gap-2 pt-2 pb-1">
+    <div className="flex items-center gap-2 pt-4 pb-2">
         <span className="text-base">{icon}</span>
-        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{title}</span>
-        <div className="flex-1 h-px bg-slate-100 ml-1" />
+        <span className="text-xs font-bold uppercase tracking-widest text-white/70">{title}</span>
+        <div className="flex-1 h-px bg-gradient-to-r from-white/20 to-transparent ml-1" />
     </div>
 );
 
@@ -248,15 +248,15 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
             <Sheet open={open} onOpenChange={(newOpen) => { if (!newOpen) handleAttemptClose(); }}>
                 <SheetContent
                     side="right"
-                    className="w-full sm:w-[560px] flex flex-col p-0 gap-0 overflow-hidden border-l border-slate-200 shadow-2xl bg-white"
+                    className="w-full sm:w-[600px] flex flex-col p-0 gap-0 overflow-hidden bg-[#0a0a0f] border-l border-[rgba(139,92,246,0.3)]"
                 >
                     {/* ── Header ── */}
-                    <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 text-white shrink-0">
-                        <SheetHeader className="space-y-0.5">
-                            <SheetTitle className="text-white text-lg font-bold tracking-tight">
+                    <div className="px-6 py-5 border-b border-white/10 bg-gradient-to-r from-[#0a0a0f] via-[#111118] to-[#1e1e2e] shrink-0">
+                        <SheetHeader className="space-y-1">
+                            <SheetTitle className="text-white text-xl font-bold tracking-tight gradient-text">
                                 {editingId ? "✏️ Edit Ticket" : "🎫 New Ticket"}
                             </SheetTitle>
-                            <SheetDescription className="text-slate-400 text-xs">
+                            <SheetDescription className="text-white/50 text-sm">
                                 {editingId
                                     ? `Editing ticket ${editingId}`
                                     : "Fill out the form below to create a new ticket."}
@@ -265,7 +265,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                     </div>
 
                     {/* ── Ticket Meta Banner ── */}
-                    <div className="px-6 py-4 bg-indigo-50 border-b border-indigo-100 shrink-0">
+                    <div className="px-6 py-4 bg-[rgba(139,92,246,0.05)] border-b border-white/10 shrink-0">
                         <div className="grid grid-cols-3 gap-3">
                             {[
                                 { label: "Ticket ID", name: "ticket_id" },
@@ -273,7 +273,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                 { label: "Technician", name: "technician_name" },
                             ].map(({ label, name }) => (
                                 <div key={name} className="flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 mb-0.5">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
                                         {label}
                                     </span>
                                     <Input
@@ -281,7 +281,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                         name={name}
                                         value={form[name] || ""}
                                         onChange={handleInputChange}
-                                        className="h-7 text-xs bg-white border-indigo-200 text-indigo-900 font-semibold px-2 focus-visible:ring-indigo-300"
+                                        className="h-8 text-xs bg-[#0a0a0f] border-white/10 text-white font-medium px-3 focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_rgba(139,92,246,0.2)]"
                                     />
                                 </div>
                             ))}
@@ -289,7 +289,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
 
                         {isResolved && (
                             <div className="mt-3 flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 mb-0.5">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
                                     Closed By
                                 </span>
                                 <Input
@@ -297,14 +297,14 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                     name="closed_by"
                                     value={form.closed_by || ""}
                                     onChange={handleInputChange}
-                                    className="h-7 text-xs bg-white border-indigo-200 text-indigo-900 font-semibold px-2 focus-visible:ring-indigo-300"
+                                    className="h-8 text-xs bg-[#0a0a0f] border-white/10 text-white font-medium px-3 focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_rgba(139,92,246,0.2)]"
                                 />
                             </div>
                         )}
                     </div>
 
                     {/* ── Scrollable Body ── */}
-                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#0a0a0f]">
 
                         <SectionHeader icon="👤" title="Requestor" />
 
