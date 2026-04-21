@@ -49,6 +49,7 @@ import { toast } from "sonner";
 
 import { ServiceDialog } from "@/components/catalogue/services-dialog";
 import { supabase } from "@/utils/supabase";
+import { fetchAllSupabaseRows } from "@/utils/supabase-fetch-all";
 
 interface CatalogueItem {
     id: string;
@@ -127,14 +128,13 @@ export const Catalogue: React.FC<CatalogueProps> = ({
         setErrorActivities(null);
 
         try {
-            const { data, error } = await supabase
-                .from("service_catalogue")
-                .select("*")
-                .order("date_created", { ascending: false });
+            const data = await fetchAllSupabaseRows<CatalogueItem>(
+                "service_catalogue",
+                "*",
+                { column: "date_created", ascending: false }
+            );
 
-            if (error) throw error;
-
-            setActivities(data ?? []);
+            setActivities(data);
         } catch (error: any) {
             setErrorActivities(error.message || "Error fetching tickets");
             toast.error(error.message || "Error fetching tickets");

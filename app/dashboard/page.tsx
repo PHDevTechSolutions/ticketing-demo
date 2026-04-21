@@ -46,6 +46,7 @@ import {
 import { type DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { supabase } from "@/utils/supabase";
+import { fetchAllSupabaseRows } from "@/utils/supabase-fetch-all";
 
 import { StatusCard } from "@/components/dashboard/dashboard-card-status";
 
@@ -142,14 +143,13 @@ function DashboardContent() {
     setErrorActivities(null);
 
     try {
-      const { data, error } = await supabase
-        .from("tickets")
-        .select("*")
-        .order("date_created", { ascending: false });
+      const data = await fetchAllSupabaseRows<RequestItem>(
+        "tickets",
+        "*",
+        { column: "date_created", ascending: false }
+      );
 
-      if (error) throw error;
-
-      setActivities(data ?? []);
+      setActivities(data);
     } catch (error: any) {
       setErrorActivities(error.message || "Error fetching tickets");
       toast.error(error.message || "Error fetching tickets");

@@ -14,7 +14,8 @@ import { type DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner";
 import { ReceivedDialog } from "@/components/tickets/received-ticket-dialog";
-import { supabase } from "@/utils/supabase"; // adjust path if needed
+import { supabase } from "@/utils/supabase";
+import { fetchAllSupabaseRows } from "@/utils/supabase-fetch-all";
 
 interface RequestItem {
     id: string; // Supabase uses `id` not `_id`
@@ -121,14 +122,13 @@ export const Received: React.FC<RequestProps> = ({
         setErrorActivities(null);
 
         try {
-            const { data, error } = await supabase
-                .from("tickets")
-                .select("*")
-                .order("date_created", { ascending: false });
+            const data = await fetchAllSupabaseRows<RequestItem>(
+                "tickets",
+                "*",
+                { column: "date_created", ascending: false }
+            );
 
-            if (error) throw error;
-
-            setActivities(data ?? []);
+            setActivities(data);
         } catch (error: any) {
             setErrorActivities(error.message || "Error fetching tickets");
             toast.error(error.message || "Error fetching tickets");
