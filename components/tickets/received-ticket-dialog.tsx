@@ -312,9 +312,9 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                         <div className="flex flex-col relative">
                             <FieldLabel>Requestor Name</FieldLabel>
                             {loadingUsers ? (
-                                <div className="text-xs text-slate-400 py-2">Loading users…</div>
+                                <div className="text-xs text-white/50 py-2">Loading users…</div>
                             ) : errorUsers ? (
-                                <div className="text-xs text-red-500 py-2">{errorUsers}</div>
+                                <div className="text-xs text-red-400 py-2">{errorUsers}</div>
                             ) : (
                                 <div className="relative">
                                     <Input
@@ -337,7 +337,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                                 handleSelectChange("requestor_name", "");
                                                 setIsDropdownOpen(false);
                                             }}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-sm leading-none"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-sm leading-none"
                                         >
                                             ✕
                                         </button>
@@ -346,14 +346,14 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                     {isDropdownOpen && filteredUsers.length > 0 && (
                                         <div
                                             ref={dropdownRef}
-                                            className="absolute z-50 w-full mt-1 max-h-52 overflow-auto rounded-lg border border-slate-200 bg-white shadow-xl"
+                                            className="absolute z-50 w-full mt-1 max-h-52 overflow-auto rounded-lg border border-white/10 bg-[#0a0a0f] shadow-[0_0_30px_rgba(0,0,0,0.5)]"
                                         >
                                             {filteredUsers.map((user) => {
                                                 const displayName = `${user.Lastname}, ${user.Firstname}`;
                                                 return (
                                                     <div
                                                         key={user.ReferenceID}
-                                                        className="px-3 py-2.5 text-sm hover:bg-indigo-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
+                                                        className="px-3 py-2.5 text-sm hover:bg-[rgba(139,92,246,0.1)] cursor-pointer border-b border-white/5 last:border-0 transition-colors"
                                                         onMouseDown={(e) => {
                                                             // use mousedown so blur doesn't fire first
                                                             e.preventDefault();
@@ -362,8 +362,8 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                                             setIsDropdownOpen(false);
                                                         }}
                                                     >
-                                                        <span className="font-medium text-slate-800">{displayName}</span>
-                                                        <span className="text-xs text-slate-400 ml-2">#{user.ReferenceID}</span>
+                                                        <span className="font-medium text-white/90">{displayName}</span>
+                                                        <span className="text-xs text-white/40 ml-2">#{user.ReferenceID}</span>
                                                     </div>
                                                 );
                                             })}
@@ -371,7 +371,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                     )}
 
                                     {isDropdownOpen && searchQuery && filteredUsers.length === 0 && (
-                                        <div className="absolute z-50 w-full mt-1 rounded-lg border border-slate-200 bg-white shadow-xl px-3 py-3 text-sm text-slate-400">
+                                        <div className="absolute z-50 w-full mt-1 rounded-lg border border-white/10 bg-[#0a0a0f] shadow-[0_0_30px_rgba(0,0,0,0.5)] px-3 py-3 text-sm text-white/50">
                                             No users found for "{searchQuery}"
                                         </div>
                                     )}
@@ -509,14 +509,14 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {[
-                                            { value: "Critical", label: "P-1 · Critical", sub: "Response 15 min · Resolved 4 hrs", color: "text-red-600" },
-                                            { value: "High", label: "P-2 · High", sub: "Response 1 hr · Resolved 8 hrs", color: "text-orange-500" },
-                                            { value: "Medium", label: "P-3 · Medium", sub: "Response 4 hrs · Resolved 1–2 days", color: "text-yellow-600" },
-                                            { value: "Low", label: "P-4 · Low", sub: "Response 8 hrs · Resolved 3–4 days", color: "text-green-600" },
+                                            { value: "Critical", label: "P-1 · Critical", sub: "Response 15 min · Resolved 4 hrs", color: "text-red-400" },
+                                            { value: "High", label: "P-2 · High", sub: "Response 1 hr · Resolved 8 hrs", color: "text-orange-400" },
+                                            { value: "Medium", label: "P-3 · Medium", sub: "Response 4 hrs · Resolved 1–2 days", color: "text-yellow-400" },
+                                            { value: "Low", label: "P-4 · Low", sub: "Response 8 hrs · Resolved 3–4 days", color: "text-emerald-400" },
                                         ].map((p) => (
                                             <SelectItem key={p.value} value={p.value}>
                                                 <span className={`font-semibold ${p.color}`}>{p.label}</span>
-                                                <span className="text-slate-400 text-xs ml-2">({p.sub})</span>
+                                                <span className="text-white/40 text-xs ml-2">({p.sub})</span>
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -550,7 +550,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                 onChange={(e) => handleSelectChange("remarks", e.target.value)}
                                 rows={4}
                                 placeholder="Describe the actions taken or notes…"
-                                className="rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-colors"
+                                className="rounded-md border border-white/10 bg-[#0a0a0f] px-3 py-2 text-sm text-white resize-none focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all placeholder:text-white/40"
                             />
                         </div>
 
@@ -615,20 +615,20 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                 <FieldLabel>Proof of Completion</FieldLabel>
 
                                 {form.proof_of_completion && (
-                                    <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
-                                        <span className="text-green-600 text-xs">✅ Proof uploaded</span>
+                                    <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-md">
+                                        <span className="text-emerald-400 text-xs">✅ Proof uploaded</span>
                                         <a
                                             href={form.proof_of_completion}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-indigo-600 underline text-xs font-medium"
+                                            className="text-primary underline text-xs font-medium hover:text-white"
                                         >
                                             View
                                         </a>
                                         <button
                                             type="button"
                                             onClick={() => handleSelectChange("proof_of_completion", "")}
-                                            className="ml-auto text-red-400 hover:text-red-600 text-xs font-bold transition-colors"
+                                            className="ml-auto text-red-400 hover:text-red-300 text-xs font-bold transition-colors"
                                         >
                                             Remove
                                         </button>
@@ -651,7 +651,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                         }
                                     }}
                                 />
-                                <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
+                                <p className="text-[11px] text-white/40 mt-1.5 flex items-center gap-1">
                                     <span>💡</span> You can also paste an image directly from your clipboard.
                                 </p>
                             </div>
@@ -662,13 +662,18 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                     </div>
 
                     {/* ── Footer ── */}
-                    <SheetFooter className="px-6 py-4 border-t border-slate-100 bg-slate-50 shrink-0 flex justify-end gap-2">
-                        <Button variant="outline" onClick={handleAttemptClose} className="min-w-[90px]">
+                    <SheetFooter className="px-6 py-4 border-t border-white/10 bg-[rgba(0,0,0,0.3)] shrink-0 flex justify-end gap-3">
+                        <Button 
+                            variant="outline" 
+                            onClick={handleAttemptClose} 
+                            className="min-w-[100px] border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
+                        >
                             Cancel
                         </Button>
                         <Button
                             onClick={editingId ? handleUpdate : handleSubmit}
-                            className="min-w-[90px] bg-indigo-600 hover:bg-indigo-700 text-white"
+                            variant="neon"
+                            className="min-w-[140px] neon-button font-semibold"
                         >
                             {editingId ? "Update Ticket" : "Create Ticket"}
                         </Button>
@@ -678,18 +683,30 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
 
             {/* Confirm discard dialog */}
             <Dialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
-                <DialogContent className="sm:max-w-[380px] w-full p-6">
+                <DialogContent className="sm:max-w-[380px] w-full p-6 glass-card border-white/10">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
+                        <DialogTitle className="flex items-center gap-2 text-white/90">
                             <span>⚠️</span> Discard changes?
                         </DialogTitle>
-                        <DialogDescription className="mt-1">
+                        <DialogDescription className="mt-1 text-white/60">
                             You have unsaved changes. Closing will reset the form and all changes will be lost.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="mt-5 flex justify-end gap-2">
-                        <Button variant="outline" onClick={cancelClose}>Keep editing</Button>
-                        <Button variant="destructive" onClick={confirmClose}>Discard</Button>
+                    <div className="mt-5 flex justify-end gap-3">
+                        <Button 
+                            variant="outline" 
+                            onClick={cancelClose}
+                            className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
+                        >
+                            Keep editing
+                        </Button>
+                        <Button 
+                            variant="destructive" 
+                            onClick={confirmClose}
+                            className="bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
+                        >
+                            Discard
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>
