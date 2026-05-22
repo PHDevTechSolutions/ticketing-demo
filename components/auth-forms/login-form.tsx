@@ -8,9 +8,6 @@ import { v4 as uuidv4 } from "uuid";
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator, FieldSet, FieldContent, FieldTitle, } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 import { db } from "@/lib/firebase";
@@ -21,16 +18,26 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     const [Password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [lockUntil, setLockUntil] = useState<string | null>(null);
-    const [formattedLockUntil, setFormattedLockUntil] = useState<string | null>(null);
+    const [currentTime, setCurrentTime] = useState("");
 
     const { setUserId } = useUser();
     const router = useRouter();
 
     useEffect(() => {
-        if (lockUntil) {
-            setFormattedLockUntil(new Date(lockUntil).toLocaleString());
-        }
-    }, [lockUntil]);
+        const tick = () => {
+            const now = new Date();
+            setCurrentTime(now.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+                timeZone: "Asia/Manila",
+            }));
+        };
+        tick();
+        const interval = setInterval(tick, 1000);
+        return () => clearInterval(interval);
+    }, []);
 
     const playSound = (file: string) => {
         const audio = new Audio(file);
@@ -151,80 +158,177 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     );
 
     return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <Card className="overflow-hidden p-0">
-                <CardContent className="grid p-0 md:grid-cols-2">
-                    <form onSubmit={handleSubmit} className="p-6 md:p-8">
-                        <FieldGroup>
-                            <div className="flex flex-col items-center gap-2 text-center">
-                                <h1 className="text-2xl font-bold">Welcome back</h1>
-                                <p className="text-muted-foreground text-balance">
-                                    Login to your Help Desk account
-                                </p>
-                            </div>
-                            <Field>
-                                <FieldLabel htmlFor="email">Email</FieldLabel>
+        <div className={cn("w-full max-w-md", className)} {...props}>
+            {/* Terminal window */}
+            <div className="rounded-lg overflow-hidden border border-[#8b5cf6]/30 shadow-[0_0_40px_rgba(139,92,246,0.15)]">
+
+                {/* Title bar */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#0d0d14] border-b border-[#8b5cf6]/20">
+                    <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#ef4444] shadow-[0_0_6px_#ef4444]" />
+                        <span className="w-3 h-3 rounded-full bg-[#eab308] shadow-[0_0_6px_#eab308]" />
+                        <span className="w-3 h-3 rounded-full bg-[#22c55e] shadow-[0_0_6px_#22c55e]" />
+                    </div>
+                    <span className="text-xs font-mono text-[#8b5cf6]/70 tracking-widest uppercase">
+                        helpdesk.auth — bash
+                    </span>
+                    <span className="text-xs font-mono text-[#22c55e]/60 tabular-nums">
+                        {currentTime}
+                    </span>
+                </div>
+
+                {/* Terminal body */}
+                <div className="bg-[#080810] px-6 py-6 font-mono">
+
+                    {/* Boot lines */}
+                    <div className="mb-5 space-y-0.5 text-xs">
+                        <p className="text-[#22c55e]/50">
+                            <span className="text-[#8b5cf6]/60">$</span> ./helpdesk --init
+                        </p>
+                        <p className="text-[#a1a1aa]/40">
+                            [  OK  ] Loaded authentication module
+                        </p>
+                        <p className="text-[#a1a1aa]/40">
+                            [  OK  ] Secure session established
+                        </p>
+                        <p className="text-[#22c55e]/60">
+                            ● STATUS: <span className="text-[#22c55e]">ONLINE</span>
+                            <span className="ml-3 text-[#a1a1aa]/40">· PH/Manila · 7AM–7PM window</span>
+                        </p>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-[#8b5cf6]/10 mb-5" />
+
+                    {/* Header */}
+                    <div className="mb-6">
+                        <h1 className="text-lg font-bold text-white tracking-tight">
+                            <span className="text-[#8b5cf6]">▸</span> AUTHENTICATE
+                        </h1>
+                        <p className="text-xs text-[#a1a1aa]/60 mt-0.5">
+                            Enter credentials to access the Help Desk system
+                        </p>
+                    </div>
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+
+                        {/* Email field */}
+                        <div className="space-y-1.5">
+                            <label
+                                htmlFor="email"
+                                className="block text-xs text-[#8b5cf6] uppercase tracking-widest"
+                            >
+                                <span className="text-[#a1a1aa]/50 mr-1">01</span> Email
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b5cf6]/50 text-xs font-mono select-none">
+                                    &gt;_
+                                </span>
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="m@helpdesk.com"
+                                    placeholder="user@helpdesk.com"
                                     required
                                     value={Email}
                                     onChange={(e) => setEmail(e.target.value)}
+                                    className="pl-9 bg-[#0d0d14] border-[#8b5cf6]/20 text-white placeholder:text-[#a1a1aa]/30 font-mono text-sm focus-visible:border-[#8b5cf6]/60 focus-visible:ring-[#8b5cf6]/20 focus-visible:ring-2 rounded-md"
                                 />
-                            </Field>
-                            <Field>
-                                <div className="flex items-center">
-                                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                                    <a
-                                        href="/reset-password"
-                                        className="ml-auto text-sm underline-offset-2 hover:underline"
-                                    >
-                                        Forgot your password?
-                                    </a>
+                            </div>
+                        </div>
 
-                                </div>
+                        {/* Password field */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <label
+                                    htmlFor="password"
+                                    className="block text-xs text-[#8b5cf6] uppercase tracking-widest"
+                                >
+                                    <span className="text-[#a1a1aa]/50 mr-1">02</span> Password
+                                </label>
+                                <a
+                                    href="/reset-password"
+                                    className="text-[10px] text-[#a1a1aa]/40 hover:text-[#8b5cf6] transition-colors tracking-wide"
+                                >
+                                    [forgot?]
+                                </a>
+                            </div>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b5cf6]/50 text-xs font-mono select-none">
+                                    &gt;_
+                                </span>
                                 <Input
                                     id="password"
                                     type="password"
-                                    placeholder="••••••••"
+                                    placeholder="••••••••••••"
                                     required
                                     value={Password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    className="pl-9 bg-[#0d0d14] border-[#8b5cf6]/20 text-white placeholder:text-[#a1a1aa]/30 font-mono text-sm focus-visible:border-[#8b5cf6]/60 focus-visible:ring-[#8b5cf6]/20 focus-visible:ring-2 rounded-md"
                                 />
-                            </Field>
+                            </div>
+                        </div>
 
-                            {/* Department section removed */}
+                        {/* Lock warning */}
+                        {lockUntil && (
+                            <div className="flex items-start gap-2 rounded-md border border-[#ef4444]/30 bg-[#ef4444]/5 px-3 py-2">
+                                <span className="text-[#ef4444] text-xs mt-0.5">✕</span>
+                                <p className="text-xs text-[#ef4444]/80 font-mono">
+                                    LOCKED until {new Date(lockUntil).toLocaleString()}
+                                </p>
+                            </div>
+                        )}
 
-                            <Field>
-                                <Button type="submit" disabled={loading} className="w-full">
-                                    {loading ? "Signing in..." : "Login"}
-                                </Button>
-                            </Field>
-
-                            <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                                Or continue with
-                            </FieldSeparator>
-                            <FieldDescription className="text-center">
-                                Don&apos;t have an account? <Link href="/auth/signup" className="text-primary hover:underline">
-                                    Sign up
-                                </Link>
-                            </FieldDescription>
-                        </FieldGroup>
+                        {/* Submit */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className={cn(
+                                "w-full mt-2 py-2.5 rounded-md font-mono text-sm font-semibold tracking-widest uppercase transition-all duration-200",
+                                "border border-[#8b5cf6]/40 text-[#8b5cf6]",
+                                "hover:bg-[#8b5cf6]/10 hover:border-[#8b5cf6]/70 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)]",
+                                "disabled:opacity-40 disabled:cursor-not-allowed",
+                                loading && "animate-pulse"
+                            )}
+                        >
+                            {loading ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#8b5cf6] animate-bounce [animation-delay:0ms]" />
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#8b5cf6] animate-bounce [animation-delay:150ms]" />
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#8b5cf6] animate-bounce [animation-delay:300ms]" />
+                                    <span className="ml-1">Authenticating</span>
+                                </span>
+                            ) : (
+                                "[ Execute Login ]"
+                            )}
+                        </button>
                     </form>
-                    <div className="bg-muted relative hidden md:block">
-                        <img
-                            src="/ticketing.png"
-                            alt="Image"
-                            className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-                        />
+
+                    {/* Footer */}
+                    <div className="mt-6 pt-4 border-t border-[#8b5cf6]/10 flex items-center justify-between">
+                        <p className="text-[10px] text-[#a1a1aa]/30 font-mono">
+                            No account?{" "}
+                            <Link
+                                href="/auth/signup"
+                                className="text-[#8b5cf6]/60 hover:text-[#8b5cf6] transition-colors"
+                            >
+                                ./signup
+                            </Link>
+                        </p>
+                        <p className="text-[10px] text-[#a1a1aa]/20 font-mono">
+                            v2.0.0 · secure
+                        </p>
                     </div>
-                </CardContent>
-            </Card>
-            <FieldDescription className="px-6 text-center">
-                By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-                and <a href="#">Privacy Policy</a>.
-            </FieldDescription>
+                </div>
+            </div>
+
+            {/* Bottom note */}
+            <p className="mt-4 text-center text-[10px] text-[#a1a1aa]/25 font-mono">
+                By authenticating, you agree to our{" "}
+                <a href="#" className="hover:text-[#8b5cf6]/50 transition-colors">Terms</a>
+                {" "}and{" "}
+                <a href="#" className="hover:text-[#8b5cf6]/50 transition-colors">Privacy Policy</a>
+            </p>
         </div>
     );
 }

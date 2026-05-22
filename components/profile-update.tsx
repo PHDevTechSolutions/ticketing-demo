@@ -8,23 +8,9 @@ import { FormatProvider } from "@/contexts/FormatContext";
 import { SidebarLeft } from "@/components/sidebar-left";
 import { SidebarRight } from "@/components/sidebar-right";
 import Image from "next/image";
-
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { type DateRange } from "react-day-picker";
 
 interface UserDetails {
@@ -41,6 +27,33 @@ interface UserDetails {
   ContactPassword?: string;
 }
 
+// ─── tiny helpers ─────────────────────────────────────────────────────────────
+
+const FL: React.FC<{ children: React.ReactNode; htmlFor?: string }> = ({ children, htmlFor }) => (
+  <label htmlFor={htmlFor} className="block text-[9px] font-mono font-bold uppercase tracking-[0.2em] mb-1" style={{ color: "rgba(249,115,22,0.6)" }}>
+    {children}
+  </label>
+);
+
+const TI: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ className, ...props }) => (
+  <input
+    className={`w-full text-[11px] font-mono px-3 py-1.5 focus:outline-none ${className ?? ""}`}
+    style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(229,229,208,0.8)" }}
+    {...props}
+  />
+);
+
+function SH({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-2 pb-2 mb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <span className="text-[#f97316] font-mono text-xs">▸</span>
+      <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(229,229,208,0.5)" }}>{title}</span>
+    </div>
+  );
+}
+
+// ─── component ────────────────────────────────────────────────────────────────
+
 export default function ProfileClient() {
   const searchParams = useSearchParams();
   const userId = searchParams?.get("id") ?? "";
@@ -50,28 +63,18 @@ export default function ProfileClient() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState<
-    "weak" | "medium" | "strong" | ""
-  >("");
+  const [passwordStrength, setPasswordStrength] = useState<"weak" | "medium" | "strong" | "">("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [dateCreatedFilterRange, setDateCreatedFilterRangeAction] =
-    useState<DateRange | undefined>(undefined);
+  const [dateCreatedFilterRange, setDateCreatedFilterRangeAction] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
-    if (!userId) {
-      setError("User ID missing in URL");
-      setLoading(false);
-      return;
-    }
-
+    if (!userId) { setError("User ID missing in URL"); setLoading(false); return; }
     async function fetchUser() {
       try {
         const res = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
         if (!res.ok) throw new Error("Failed to fetch user");
-
         const data = await res.json();
-
         setUserDetails({
           id: data._id || "",
           Firstname: data.Firstname || "",
@@ -92,53 +95,35 @@ export default function ProfileClient() {
         setLoading(false);
       }
     }
-
     fetchUser();
   }, [userId]);
 
-  const calculatePasswordStrength = (
-    password: string
-  ): "weak" | "medium" | "strong" | "" => {
-    if (!password) return "";
-    if (password.length < 4) return "weak";
-    if (/^(?=.*[a-z])(?=.*\d).{6,}$/.test(password)) return "medium";
-    if (
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(password)
-    )
-      return "strong";
+  const calcStrength = (p: string): "weak" | "medium" | "strong" | "" => {
+    if (!p) return "";
+    if (p.length < 4) return "weak";
+    if (/^(?=.*[a-z])(?=.*\d).{6,}$/.test(p)) return "medium";
+    if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(p)) return "strong";
     return "weak";
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!userDetails) return;
     const { name, value } = e.target;
-
-    setUserDetails({
-      ...userDetails,
-      [name]: value,
-    });
-
-    if (name === "Password") {
-      setPasswordStrength(calculatePasswordStrength(value));
-    }
+    setUserDetails({ ...userDetails, [name]: value });
+    if (name === "Password") setPasswordStrength(calcStrength(value));
   };
 
   const generatePassword = () => {
-    const chars =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
     let pass = "";
-    for (let i = 0; i < 10; i++) {
-      pass += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    for (let i = 0; i < 10; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
     return pass;
   };
 
   const handleGeneratePassword = () => {
-    const newPass = generatePassword();
-    setUserDetails((prev) =>
-      prev ? { ...prev, Password: newPass, ContactPassword: newPass } : prev
-    );
-    setPasswordStrength(calculatePasswordStrength(newPass));
+    const p = generatePassword();
+    setUserDetails((prev) => prev ? { ...prev, Password: p, ContactPassword: p } : prev);
+    setPasswordStrength(calcStrength(p));
   };
 
   const handleImageUpload = async (file: File) => {
@@ -146,81 +131,36 @@ export default function ProfileClient() {
     const data = new FormData();
     data.append("file", file);
     data.append("upload_preset", "Xchire");
-
     try {
-      const res = await fetch(
-        "https://api.cloudinary.com/v1_1/dhczsyzcz/image/upload",
-        {
-          method: "POST",
-          body: data,
-        }
-      );
+      const res = await fetch("https://api.cloudinary.com/v1_1/dhczsyzcz/image/upload", { method: "POST", body: data });
       const json = await res.json();
       if (json.secure_url) {
-        setUserDetails((prev) =>
-          prev ? { ...prev, profilePicture: json.secure_url } : prev
-        );
+        setUserDetails((prev) => prev ? { ...prev, profilePicture: json.secure_url } : prev);
         toast.success("Image uploaded successfully");
       } else {
         toast.error("Failed to upload image");
       }
-    } catch (error) {
+    } catch (err) {
       toast.error("Error uploading image");
-      console.error(error);
+      console.error(err);
     } finally {
       setUploading(false);
     }
   };
 
-  const onImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    handleImageUpload(file);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userDetails) return;
-
-    if (userDetails.Password && userDetails.Password.length > 10) {
-      toast.error("Password must be at most 10 characters");
-      return;
-    }
-    if (userDetails.Password !== userDetails.ContactPassword) {
-      toast.error("Password and Confirm Password do not match");
-      return;
-    }
-
+    if (userDetails.Password && userDetails.Password.length > 10) { toast.error("Password must be at most 10 characters"); return; }
+    if (userDetails.Password !== userDetails.ContactPassword) { toast.error("Passwords do not match"); return; }
     setSaving(true);
-
     try {
       const { Password, ContactPassword, id, ...rest } = userDetails;
-      const payload = {
-        ...rest,
-        id,
-        ...(Password ? { Password } : {}),
-        profilePicture: userDetails.profilePicture,
-      };
-
-      const res = await fetch("/api/profile-update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
+      const payload = { ...rest, id, ...(Password ? { Password } : {}), profilePicture: userDetails.profilePicture };
+      const res = await fetch("/api/profile-update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error("Failed to update profile");
-
       toast.success("Profile updated successfully");
-
-      setUserDetails((prev) =>
-        prev
-          ? {
-            ...prev,
-            Password: "",
-            ContactPassword: "",
-          }
-          : prev
-      );
+      setUserDetails((prev) => prev ? { ...prev, Password: "", ContactPassword: "" } : prev);
       setPasswordStrength("");
     } catch (err) {
       console.error(err);
@@ -230,273 +170,199 @@ export default function ProfileClient() {
     }
   };
 
-  if (loading) return <div>Loading user data...</div>;
-  if (error) return <div className="text-red-600">{error}</div>;
+  const strengthColor = passwordStrength === "strong" ? "#22c55e" : passwordStrength === "medium" ? "#eab308" : "#ef4444";
+
+  // ─── loading / error states ────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 justify-center min-h-screen" style={{ backgroundColor: "#080c10" }}>
+        <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:0ms]" />
+        <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:150ms]" />
+        <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:300ms]" />
+        <span className="text-[10px] font-mono text-white/30 ml-1 uppercase tracking-widest">Loading...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: "#080c10" }}>
+        <div className="px-4 py-3 font-mono text-[11px] text-[#ef4444]/80" style={{ border: "1px solid rgba(239,68,68,0.3)" }}>
+          ✕ {error}
+        </div>
+      </div>
+    );
+  }
+
   if (!userDetails) return null;
 
   return (
-    <>
-      <UserProvider>
-        <FormatProvider>
-          <SidebarProvider>
-            <SidebarLeft />
-            <SidebarInset>
-              <header className="bg-background sticky top-0 flex h-14 shrink-0 items-center gap-2">
-                <div className="flex flex-1 items-center gap-2 px-3">
-                  <SidebarTrigger />
-                  <Separator
-                    orientation="vertical"
-                    className="mr-2 data-[orientation=vertical]:h-4"
-                  />
-                  <Breadcrumb>
-                    <BreadcrumbList>
-                      <BreadcrumbItem>
-                        <BreadcrumbPage className="line-clamp-1">
-                          Project Management & Task Tracking
-                        </BreadcrumbPage>
-                      </BreadcrumbItem>
-                    </BreadcrumbList>
-                  </Breadcrumb>
-                </div>
-              </header>
+    <UserProvider>
+      <FormatProvider>
+        <SidebarProvider>
+          <SidebarLeft />
+          <SidebarInset style={{ backgroundColor: "#080c10", minHeight: "100%" }}>
 
-              <div className="flex flex-1 flex-col gap-2 p-4">
-                <h1 className="text-2xl font-semibold mb-4">Update Profile</h1>
+            {/* Header */}
+            <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 px-4"
+              style={{ backgroundColor: "rgba(8,12,16,0.95)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+              <SidebarTrigger className="text-white/40 hover:text-white/80 hover:bg-white/5" />
+              <Separator orientation="vertical" className="h-3.5 mx-1" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="text-[11px] font-mono text-white/60 uppercase tracking-widest">
+                      ▸ Profile
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </header>
 
-                <div className="flex flex-col md:flex-row gap-2">
-                  <div className="w-full md:w-1/2 flex flex-col items-center space-y-4 border rounded p-4">
-                    <AspectRatio
-                      ratio={16 / 14}
-                      className="w-full bg-muted rounded-lg overflow-hidden border border-gray-300"
-                    >
-                      {userDetails.profilePicture ? (
-                        <Image
-                          src={userDetails.profilePicture}
-                          alt="Profile"
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                          No photo
+            {/* Body */}
+            <div className="p-6">
+              <form onSubmit={handleSubmit} noValidate>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                  {/* ── Left: avatar ── */}
+                  <div className="flex flex-col gap-4">
+                    <div className="border" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                      <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <span className="w-1.5 h-1.5 bg-[#f97316]" />
+                        <span className="text-[9px] font-mono font-bold text-[#f97316] uppercase tracking-[0.2em]">Avatar</span>
+                      </div>
+                      <div className="p-4 flex flex-col items-center gap-4">
+                        {/* Photo */}
+                        <div className="relative w-full aspect-square overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                          {userDetails.profilePicture ? (
+                            <Image src={userDetails.profilePicture} alt="Profile" fill className="object-cover" />
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-[10px] font-mono uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.2)" }}>
+                              no photo
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </AspectRatio>
+                        {/* Upload */}
+                        <input type="file" id="profilePicture" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} disabled={uploading} className="hidden" />
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById("profilePicture")?.click()}
+                          disabled={uploading}
+                          className="w-full text-[9px] font-mono uppercase tracking-widest px-3 py-2 transition-colors disabled:opacity-40"
+                          style={{ border: "1px solid rgba(249,115,22,0.4)", color: "#f97316" }}
+                        >
+                          {uploading ? "Uploading..." : "[ Change Photo ]"}
+                        </button>
+                      </div>
+                    </div>
 
-                    <Label htmlFor="profilePicture">Profile Picture</Label>
-
-                    <input
-                      type="file"
-                      id="profilePicture"
-                      accept="image/*"
-                      onChange={onImageChange}
-                      disabled={uploading}
-                      className="hidden"
-                    />
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-auto"
-                      onClick={() =>
-                        document.getElementById("profilePicture")?.click()
-                      }
-                      disabled={uploading}
-                    >
-                      {uploading ? "Uploading..." : "Change Avatar Photo"}
-                    </Button>
+                    {/* Read-only info */}
+                    <div className="border" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                      <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <span className="w-1.5 h-1.5 bg-[#06b6d4]" />
+                        <span className="text-[9px] font-mono font-bold text-[#06b6d4] uppercase tracking-[0.2em]">Account Info</span>
+                      </div>
+                      <div className="px-4 py-3 space-y-2">
+                        {[
+                          { label: "Role",       value: userDetails.Role },
+                          { label: "Department", value: userDetails.Department },
+                          { label: "Status",     value: userDetails.Status },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="flex items-baseline gap-2 text-[10px] font-mono">
+                            <span style={{ color: "rgba(249,115,22,0.5)" }}>{label}</span>
+                            <span className="flex-1 border-b border-dashed" style={{ borderColor: "rgba(255,255,255,0.05)" }} />
+                            <span style={{ color: "rgba(229,229,208,0.6)" }}>{value || "—"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex-1">
-                    <form
-                      onSubmit={handleSubmit}
-                      className="space-y-6 border rounded p-2"
-                      noValidate
-                    >
-                      <fieldset className="flex flex-col md:flex-row space-x-0 md:space-x-4 border border-gray-300 rounded-md p-4">
-                        <legend className="text-sm font-semibold px-2">Name</legend>
+                  {/* ── Right: form fields ── */}
+                  <div className="md:col-span-2 flex flex-col gap-5">
 
-                        <div className="flex flex-col flex-1 space-y-2">
-                          <Label htmlFor="Firstname">First Name</Label>
-                          <Input
-                            type="text"
-                            id="Firstname"
-                            name="Firstname"
-                            value={userDetails.Firstname}
-                            onChange={handleChange}
-                            autoComplete="given-name"
-                            required
-                          />
+                    {/* Name */}
+                    <div className="border p-5" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                      <SH title="Name" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div><FL htmlFor="Firstname">First Name</FL><TI id="Firstname" name="Firstname" value={userDetails.Firstname} onChange={handleChange} autoComplete="given-name" required /></div>
+                        <div><FL htmlFor="Lastname">Last Name</FL><TI id="Lastname" name="Lastname" value={userDetails.Lastname} onChange={handleChange} autoComplete="family-name" required /></div>
+                      </div>
+                    </div>
+
+                    {/* Contact */}
+                    <div className="border p-5" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                      <SH title="Contact Details" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <FL htmlFor="Email">Email Address</FL>
+                          <TI id="Email" name="Email" type="email" value={userDetails.Email} onChange={handleChange} autoComplete="email" disabled style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.05)", color: "rgba(229,229,208,0.35)", cursor: "not-allowed" }} />
                         </div>
+                        <div><FL htmlFor="ContactNumber">Contact Number</FL><TI id="ContactNumber" name="ContactNumber" value={userDetails.ContactNumber} onChange={handleChange} autoComplete="tel" /></div>
+                      </div>
+                    </div>
 
-                        <div className="flex flex-col flex-1 space-y-2">
-                          <Label htmlFor="Lastname">Last Name</Label>
-                          <Input
-                            type="text"
-                            id="Lastname"
-                            name="Lastname"
-                            value={userDetails.Lastname}
-                            onChange={handleChange}
-                            autoComplete="family-name"
-                            required
-                          />
-                        </div>
-                      </fieldset>
-
-                      <fieldset className="flex flex-col md:flex-row space-x-0 md:space-x-4 border border-gray-300 rounded-md p-4">
-                        <legend className="text-sm font-semibold px-2">
-                          Contact Details
-                        </legend>
-
-                        <div className="flex flex-col flex-1 space-y-2">
-                          <Label htmlFor="Email">Email Address</Label>
-                          <Input
-                            type="email"
-                            id="Email"
-                            name="Email"
-                            value={userDetails.Email}
-                            onChange={handleChange}
-                            autoComplete="email"
-                            disabled
-                          />
-                        </div>
-
-                        <div className="flex flex-col flex-1 space-y-2">
-                          <Label htmlFor="ContactNumber">Contact Number</Label>
-                          <Input
-                            type="text"
-                            id="ContactNumber"
-                            name="ContactNumber"
-                            value={userDetails.ContactNumber}
-                            onChange={handleChange}
-                            autoComplete="tel"
-                          />
-                        </div>
-                      </fieldset>
-
-                      <fieldset className="flex flex-col md:flex-row border border-gray-300 rounded-md p-4">
-                        <legend className="text-sm font-semibold px-2 mb-4 md:mb-0 md:mr-8 self-start">
-                          Password Credentials
-                        </legend>
-
-                        <div className="flex flex-col flex-1 space-y-4">
-                          {/* Password row */}
-                          <div className="flex items-center space-x-4">
-                            {/* Label */}
-                            <Label
-                              htmlFor="Password"
-                              className="flex-shrink-0 w-24"
-                            >
-                              Password
-                            </Label>
-
-                            {/* Input */}
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              id="Password"
-                              name="Password"
-                              value={userDetails.Password || ""}
-                              onChange={handleChange}
-                              maxLength={10}
-                              autoComplete="new-password"
-                              className="flex-1"
-                            />
-
-                            {/* Buttons */}
-                            <div className="flex space-x-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowPassword(!showPassword)}
-                              >
-                                {showPassword ? "Hide" : "Show"}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleGeneratePassword}
-                              >
-                                Generate
-                              </Button>
-                            </div>
+                    {/* Password */}
+                    <div className="border p-5" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                      <SH title="Password Credentials" />
+                      <div className="space-y-4">
+                        {/* New password */}
+                        <div>
+                          <FL htmlFor="Password">New Password</FL>
+                          <div className="flex gap-2">
+                            <TI id="Password" name="Password" type={showPassword ? "text" : "password"} value={userDetails.Password || ""} onChange={handleChange} maxLength={10} autoComplete="new-password" className="flex-1" />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "rgba(229,229,208,0.4)" }}>
+                              {showPassword ? "hide" : "show"}
+                            </button>
+                            <button type="button" onClick={handleGeneratePassword} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors" style={{ border: "1px solid rgba(249,115,22,0.3)", color: "#f97316" }}>
+                              gen
+                            </button>
                           </div>
-
-
-                          {/* Password strength message */}
                           {passwordStrength && (
-                            <p
-                              className={`text-sm ${passwordStrength === "strong"
-                                ? "text-green-600"
-                                : passwordStrength === "medium"
-                                  ? "text-yellow-600"
-                                  : "text-red-600"
-                                }`}
-                            >
-                              Password strength: {passwordStrength}
+                            <p className="text-[9px] font-mono mt-1.5 uppercase tracking-widest" style={{ color: strengthColor }}>
+                              strength: {passwordStrength}
                             </p>
                           )}
-
-                          {/* Confirm Password row */}
-                          <div className="flex items-center space-x-4">
-                            {/* Label */}
-                            <Label
-                              htmlFor="ContactPassword"
-                              className="flex-shrink-0 w-24"
-                            >
-                              Confirm Password
-                            </Label>
-
-                            {/* Input */}
-                            <Input
-                              type={showConfirmPassword ? "text" : "password"}
-                              id="ContactPassword"
-                              name="ContactPassword"
-                              value={userDetails.ContactPassword || ""}
-                              onChange={handleChange}
-                              maxLength={10}
-                              autoComplete="new-password"
-                              className="flex-1"
-                            />
-
-                            {/* Button */}
-                            <div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              >
-                                {showConfirmPassword ? "Hide" : "Show"}
-                              </Button>
-                            </div>
-                          </div>
-
                         </div>
-                      </fieldset>
 
-                      <Button
+                        {/* Confirm password */}
+                        <div>
+                          <FL htmlFor="ContactPassword">Confirm Password</FL>
+                          <div className="flex gap-2">
+                            <TI id="ContactPassword" name="ContactPassword" type={showConfirmPassword ? "text" : "password"} value={userDetails.ContactPassword || ""} onChange={handleChange} maxLength={10} autoComplete="new-password" className="flex-1" />
+                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "rgba(229,229,208,0.4)" }}>
+                              {showConfirmPassword ? "hide" : "show"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Submit */}
+                    <div className="flex justify-end">
+                      <button
                         type="submit"
                         disabled={saving || uploading}
-                        className="w-full md:w-auto"
+                        className="text-[9px] font-mono uppercase tracking-widest px-6 py-2.5 transition-colors disabled:opacity-40"
+                        style={{ border: "1px solid rgba(249,115,22,0.4)", color: "#f97316", backgroundColor: saving ? "rgba(249,115,22,0.08)" : "transparent" }}
                       >
-                        {saving
-                          ? "Saving..."
-                          : uploading
-                            ? "Uploading..."
-                            : "Save Changes"}
-                      </Button>
-                    </form>
+                        {saving ? "Saving..." : uploading ? "Uploading..." : "[ Save Changes ]"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </SidebarInset>
-            <SidebarRight
-              userId={userId ?? undefined}
-              dateCreatedFilterRange={dateCreatedFilterRange}
-              setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction}
-            />
-          </SidebarProvider>
-        </FormatProvider>
-      </UserProvider>
-    </>
+              </form>
+            </div>
+          </SidebarInset>
+
+          <SidebarRight
+            userId={userId ?? undefined}
+            dateCreatedFilterRange={dateCreatedFilterRange}
+            setDateCreatedFilterRangeAction={setDateCreatedFilterRangeAction}
+          />
+        </SidebarProvider>
+      </FormatProvider>
+    </UserProvider>
   );
 }

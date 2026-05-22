@@ -1,30 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-    SheetFooter,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,17 +34,12 @@ function generateTicketID(existingTicketIds: string[], dateCreated?: string): st
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
     const datePart = `${year}-${month}-${day}`;
-
-    const todayIds = existingTicketIds.filter((id) =>
-        id.startsWith(`${prefix}-${datePart}`)
-    );
-
+    const todayIds = existingTicketIds.filter((id) => id.startsWith(`${prefix}-${datePart}`));
     let maxSeq = 0;
     for (const id of todayIds) {
         const seqNum = parseInt(id.split("-")[4], 10);
         if (!isNaN(seqNum) && seqNum > maxSeq) maxSeq = seqNum;
     }
-
     return `${prefix}-${datePart}-${String(maxSeq + 1).padStart(3, "0")}`;
 }
 
@@ -85,38 +57,48 @@ function toISOFromLocal(local: string): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <label className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/60">
+const FL: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <label className="mb-1 text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(249,115,22,0.6)" }}>
         {children}
     </label>
 );
 
-const SectionHeader: React.FC<{ icon: string; title: string }> = ({ icon, title }) => (
-    <div className="flex items-center gap-2 pt-4 pb-2">
-        <span className="text-base">{icon}</span>
-        <span className="text-xs font-bold uppercase tracking-widest text-white/70">{title}</span>
-        <div className="flex-1 h-px bg-gradient-to-r from-white/20 to-transparent ml-1" />
+const SH: React.FC<{ title: string }> = ({ title }) => (
+    <div className="flex items-center gap-2 pt-5 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <span className="text-[#f97316] font-mono text-xs">▸</span>
+        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(229,229,208,0.5)" }}>{title}</span>
     </div>
+);
+
+const TI: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { inputRef?: React.Ref<HTMLInputElement> }> = ({ className, inputRef, ...props }) => (
+    <input
+        ref={inputRef}
+        className={`w-full text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none ${className ?? ""}`}
+        style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }}
+        {...props}
+    />
+);
+
+const TS = (name: string, placeholder: string, options: string[], value: string, onChange: (v: string) => void) => (
+    <select
+        className="w-full text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none"
+        style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+    >
+        <option value="">{placeholder}</option>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const ReceivedDialog: React.FC<TicketDialogProps> = ({
-    open,
-    setOpen,
-    editingId,
-    form,
-    handleInputChange,
-    handleSelectChange,
-    handleSubmit,
-    handleUpdate,
-    resetForm,
-    fullname,
-    existingTicketIds,
+    open, setOpen, editingId, form, handleInputChange, handleSelectChange,
+    handleSubmit, handleUpdate, resetForm, fullname, existingTicketIds,
 }) => {
     const [showConfirmClose, setShowConfirmClose] = useState(false);
     const initializedRef = useRef(false);
-
     const [users, setUsers] = useState<User[]>([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [errorUsers, setErrorUsers] = useState<string | null>(null);
@@ -125,65 +107,42 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-    // ── Fetch users once on mount ──────────────────────────────────────────────
     useEffect(() => {
         const fetchUsers = async () => {
-            setLoadingUsers(true);
-            setErrorUsers(null);
+            setLoadingUsers(true); setErrorUsers(null);
             try {
                 const res = await fetch("/api/fetch-all-user");
                 if (!res.ok) throw new Error("Failed to fetch users");
                 setUsers(await res.json());
             } catch (err: any) {
                 setErrorUsers(err.message ?? "Error fetching users");
-            } finally {
-                setLoadingUsers(false);
-            }
+            } finally { setLoadingUsers(false); }
         };
         fetchUsers();
     }, []);
 
-    // ── Initialize form fields when opening a NEW ticket ──────────────────────
     useEffect(() => {
         if (open && !editingId && !initializedRef.current) {
             const newTicketId = generateTicketID(existingTicketIds, form.date_created);
             handleInputChange({ target: { name: "ticket_id", value: newTicketId } } as React.ChangeEvent<HTMLInputElement>);
-
-            if (!form.processed_by)
-                handleInputChange({ target: { name: "processed_by", value: fullname } } as React.ChangeEvent<HTMLInputElement>);
-            if (!form.technician_name)
-                handleInputChange({ target: { name: "technician_name", value: fullname } } as React.ChangeEvent<HTMLInputElement>);
-            if (!form.closed_by)
-                handleInputChange({ target: { name: "closed_by", value: fullname } } as React.ChangeEvent<HTMLInputElement>);
-
+            if (!form.processed_by) handleInputChange({ target: { name: "processed_by", value: fullname } } as React.ChangeEvent<HTMLInputElement>);
+            if (!form.technician_name) handleInputChange({ target: { name: "technician_name", value: fullname } } as React.ChangeEvent<HTMLInputElement>);
+            if (!form.closed_by) handleInputChange({ target: { name: "closed_by", value: fullname } } as React.ChangeEvent<HTMLInputElement>);
             initializedRef.current = true;
         }
+        if (!open) { initializedRef.current = false; setSearchQuery(""); setIsDropdownOpen(false); }
+    }, [open, editingId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-        if (!open) {
-            initializedRef.current = false;
-            setSearchQuery("");
-            setIsDropdownOpen(false);
-        }
-    }, [open, editingId]); // intentionally limited — init runs once per open
-
-    // ── Regenerate ticket ID when date_created changes (new tickets only) ──────
     useEffect(() => {
         if (!open || editingId || !form.date_created) return;
         const newId = generateTicketID(existingTicketIds, form.date_created);
-        if (newId !== form.ticket_id) {
-            handleInputChange({ target: { name: "ticket_id", value: newId } } as React.ChangeEvent<HTMLInputElement>);
-        }
+        if (newId !== form.ticket_id) handleInputChange({ target: { name: "ticket_id", value: newId } } as React.ChangeEvent<HTMLInputElement>);
     }, [form.date_created, open, editingId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // ── Close dropdown on outside click ───────────────────────────────────────
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(e.target as Node) &&
-                searchInputRef.current &&
-                !searchInputRef.current.contains(e.target as Node)
-            ) {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+                searchInputRef.current && !searchInputRef.current.contains(e.target as Node)) {
                 setIsDropdownOpen(false);
             }
         };
@@ -191,14 +150,9 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // ── Sync search query when editing an existing ticket ─────────────────────
     useEffect(() => {
-        if (open && editingId && form.requestor_name) {
-            setSearchQuery(form.requestor_name);
-        }
+        if (open && editingId && form.requestor_name) setSearchQuery(form.requestor_name);
     }, [open, editingId, form.requestor_name]);
-
-    // ── Handlers ──────────────────────────────────────────────────────────────
 
     const onDateCreatedChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         handleInputChange({ target: { name: "date_created", value: toISOFromLocal(e.target.value) } } as React.ChangeEvent<HTMLInputElement>);
@@ -208,505 +162,231 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
         handleInputChange({ target: { name: "date_closed", value: toISOFromLocal(e.target.value) } } as React.ChangeEvent<HTMLInputElement>);
     }, [handleInputChange]);
 
-    const hasChanges = () =>
-        Object.values(form).some((v) => v !== "" && v !== null && v !== undefined);
-
-    const handleAttemptClose = () => {
-        if (hasChanges()) setShowConfirmClose(true);
-        else { setOpen(false); resetForm(); }
-    };
-
+    const hasChanges = () => Object.values(form).some((v) => v !== "" && v !== null && v !== undefined);
+    const handleAttemptClose = () => { if (hasChanges()) setShowConfirmClose(true); else { setOpen(false); resetForm(); } };
     const confirmClose = () => { setShowConfirmClose(false); setOpen(false); resetForm(); };
-    const cancelClose = () => setShowConfirmClose(false);
 
     const handleImageUpload = async (file: File) => {
         const data = new FormData();
         data.append("file", file);
         data.append("upload_preset", "Xchire");
         data.append("folder", "proof_of_completion");
-        const res = await fetch("https://api.cloudinary.com/v1_1/dhczsyzcz/auto/upload", {
-            method: "POST",
-            body: data,
-        });
+        const res = await fetch("https://api.cloudinary.com/v1_1/dhczsyzcz/auto/upload", { method: "POST", body: data });
         const uploaded = await res.json();
         return uploaded.secure_url as string;
     };
 
     const filteredUsers = searchQuery
-        ? users.filter((u) =>
-            `${u.Lastname}, ${u.Firstname}`.toLowerCase().includes(searchQuery.toLowerCase())
-        )
+        ? users.filter((u) => `${u.Lastname}, ${u.Firstname}`.toLowerCase().includes(searchQuery.toLowerCase()))
         : [];
 
     const isResolved = form.status === "Resolved";
     const isScheduled = form.status === "Scheduled";
 
-    // ── Render ─────────────────────────────────────────────────────────────────
+    if (!open) return null;
 
     return (
         <>
-            <Sheet open={open} onOpenChange={(newOpen) => { if (!newOpen) handleAttemptClose(); }}>
-                <SheetContent
-                    side="right"
-                    className="w-full sm:w-[600px] flex flex-col p-0 gap-0 overflow-hidden bg-[#0a0a0f] border-l border-[rgba(139,92,246,0.3)]"
-                >
-                    {/* ── Header ── */}
-                    <div className="px-6 py-5 border-b border-white/10 bg-gradient-to-r from-[#0a0a0f] via-[#111118] to-[#1e1e2e] shrink-0">
-                        <SheetHeader className="space-y-1">
-                            <SheetTitle className="text-white text-xl font-bold tracking-tight gradient-text">
-                                {editingId ? "✏️ Edit Ticket" : "🎫 New Ticket"}
-                            </SheetTitle>
-                            <SheetDescription className="text-white/50 text-sm">
-                                {editingId
-                                    ? `Editing ticket ${editingId}`
-                                    : "Fill out the form below to create a new ticket."}
-                            </SheetDescription>
-                        </SheetHeader>
-                    </div>
+            {/* Full-page overlay */}
+            <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: "#080c10" }}>
 
-                    {/* ── Ticket Meta Banner ── */}
-                    <div className="px-6 py-4 bg-[rgba(139,92,246,0.05)] border-b border-white/10 shrink-0">
-                        <div className="grid grid-cols-3 gap-3">
-                            {[
-                                { label: "Ticket ID", name: "ticket_id" },
-                                { label: "Processed By", name: "processed_by" },
-                                { label: "Technician", name: "technician_name" },
-                            ].map(({ label, name }) => (
-                                <div key={name} className="flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
-                                        {label}
-                                    </span>
-                                    <Input
-                                        type="text"
-                                        name={name}
-                                        value={form[name] || ""}
-                                        onChange={handleInputChange}
-                                        className="h-8 text-xs bg-[#0a0a0f] border-white/10 text-white font-medium px-3 focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_rgba(139,92,246,0.2)]"
-                                    />
-                                </div>
-                            ))}
-                        </div>
-
-                        {isResolved && (
-                            <div className="mt-3 flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
-                                    Closed By
-                                </span>
-                                <Input
-                                    type="text"
-                                    name="closed_by"
-                                    value={form.closed_by || ""}
-                                    onChange={handleInputChange}
-                                    className="h-8 text-xs bg-[#0a0a0f] border-white/10 text-white font-medium px-3 focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_rgba(139,92,246,0.2)]"
-                                />
-                            </div>
+                {/* Top bar */}
+                <div className="flex items-center justify-between px-6 py-3 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                    <div className="flex items-center gap-3">
+                        <span className="text-[#f97316] font-mono text-xs">▸</span>
+                        <span className="text-[11px] font-mono font-bold text-[#f97316] uppercase tracking-[0.2em]">
+                            {editingId ? "Edit Ticket" : "New Ticket"}
+                        </span>
+                        {editingId && (
+                            <span className="text-[9px] font-mono text-white/25 ml-1">· {editingId}</span>
                         )}
                     </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleAttemptClose}
+                            className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-white/40 hover:text-[#f97316] transition-colors"
+                            style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={editingId ? handleUpdate : handleSubmit}
+                            className="text-[9px] font-mono uppercase tracking-widest px-4 py-1.5 text-[#f97316] hover:bg-[#f97316]/10 transition-colors"
+                            style={{ border: "1px solid rgba(249,115,22,0.4)" }}
+                        >
+                            {editingId ? "[ Update Ticket ]" : "[ Create Ticket ]"}
+                        </button>
+                    </div>
+                </div>
 
-                    {/* ── Scrollable Body ── */}
-                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#0a0a0f]">
+                {/* Meta strip */}
+                <div className="px-6 py-3 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", backgroundColor: "rgba(255,255,255,0.01)" }}>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+                        {[
+                            { label: "Ticket ID", name: "ticket_id" },
+                            { label: "Processed By", name: "processed_by" },
+                            { label: "Technician", name: "technician_name" },
+                            ...(isResolved ? [{ label: "Closed By", name: "closed_by" }] : []),
+                        ].map(({ label, name }) => (
+                            <div key={name} className="flex flex-col gap-1">
+                                <FL>{label}</FL>
+                                <TI type="text" name={name} value={form[name] || ""} onChange={handleInputChange} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
-                        <SectionHeader icon="👤" title="Requestor" />
+                {/* Scrollable body — two column layout */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-0 h-full">
 
-                        {/* Requestor Name with searchable dropdown */}
-                        <div className="flex flex-col relative">
-                            <FieldLabel>Requestor Name</FieldLabel>
-                            {loadingUsers ? (
-                                <div className="text-xs text-white/50 py-2">Loading users…</div>
-                            ) : errorUsers ? (
-                                <div className="text-xs text-red-400 py-2">{errorUsers}</div>
-                            ) : (
-                                <div className="relative">
-                                    <Input
-                                        ref={searchInputRef}
-                                        type="text"
-                                        placeholder="Search by name…"
-                                        value={searchQuery}
-                                        onChange={(e) => {
-                                            setSearchQuery(e.target.value);
-                                            setIsDropdownOpen(true);
-                                        }}
-                                        onFocus={() => { if (searchQuery) setIsDropdownOpen(true); }}
-                                        className="pr-8"
-                                    />
-                                    {searchQuery && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setSearchQuery("");
-                                                handleSelectChange("requestor_name", "");
-                                                setIsDropdownOpen(false);
-                                            }}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-sm leading-none"
-                                        >
-                                            ✕
-                                        </button>
-                                    )}
+                        {/* Left column */}
+                        <div className="px-6 py-4 space-y-3" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
 
-                                    {isDropdownOpen && filteredUsers.length > 0 && (
-                                        <div
-                                            ref={dropdownRef}
-                                            className="absolute z-50 w-full mt-1 max-h-52 overflow-auto rounded-lg border border-white/10 bg-[#0a0a0f] shadow-[0_0_30px_rgba(0,0,0,0.5)]"
-                                        >
-                                            {filteredUsers.map((user) => {
-                                                const displayName = `${user.Lastname}, ${user.Firstname}`;
-                                                return (
-                                                    <div
-                                                        key={user.ReferenceID}
-                                                        className="px-3 py-2.5 text-sm hover:bg-[rgba(139,92,246,0.1)] cursor-pointer border-b border-white/5 last:border-0 transition-colors"
-                                                        onMouseDown={(e) => {
-                                                            // use mousedown so blur doesn't fire first
-                                                            e.preventDefault();
-                                                            handleSelectChange("requestor_name", displayName);
-                                                            setSearchQuery(displayName);
-                                                            setIsDropdownOpen(false);
-                                                        }}
-                                                    >
-                                                        <span className="font-medium text-white/90">{displayName}</span>
-                                                        <span className="text-xs text-white/40 ml-2">#{user.ReferenceID}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                            <SH title="Requestor" />
+                            <div className="flex flex-col gap-1">
+                                <FL>Requestor Name</FL>
+                                {loadingUsers ? (
+                                    <p className="text-[10px] font-mono text-white/30">Loading users…</p>
+                                ) : errorUsers ? (
+                                    <p className="text-[10px] font-mono text-[#ef4444]/70">{errorUsers}</p>
+                                ) : (
+                                    <div className="relative">
+                                        <TI
+                                            inputRef={searchInputRef}
+                                            type="text"
+                                            placeholder="> search by name…"
+                                            value={searchQuery}
+                                            onChange={(e) => { setSearchQuery(e.target.value); setIsDropdownOpen(true); }}
+                                            onFocus={() => { if (searchQuery) setIsDropdownOpen(true); }}
+                                        />
+                                        {searchQuery && (
+                                            <button type="button" onClick={() => { setSearchQuery(""); handleSelectChange("requestor_name", ""); setIsDropdownOpen(false); }}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-[#f97316] text-xs font-mono">✕</button>
+                                        )}
+                                        {isDropdownOpen && filteredUsers.length > 0 && (
+                                            <div ref={dropdownRef} className="absolute z-50 w-full mt-0 max-h-48 overflow-auto" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#080c10" }}>
+                                                {filteredUsers.map((user) => {
+                                                    const displayName = `${user.Lastname}, ${user.Firstname}`;
+                                                    return (
+                                                        <div key={user.ReferenceID}
+                                                            className="px-3 py-2 text-[11px] font-mono cursor-pointer flex items-center justify-between transition-colors"
+                                                            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                                                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.04)")}
+                                                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                                                            onMouseDown={(e) => { e.preventDefault(); handleSelectChange("requestor_name", displayName); setSearchQuery(displayName); setIsDropdownOpen(false); }}>
+                                                            <span className="text-[#e5e5d0]/80">{displayName}</span>
+                                                            <span className="text-white/25 text-[9px]">#{user.ReferenceID}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        {isDropdownOpen && searchQuery && filteredUsers.length === 0 && (
+                                            <div className="absolute z-50 w-full mt-0 px-3 py-2 text-[10px] font-mono text-white/30" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#080c10" }}>
+                                                No users found for "{searchQuery}"
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
-                                    {isDropdownOpen && searchQuery && filteredUsers.length === 0 && (
-                                        <div className="absolute z-50 w-full mt-1 rounded-lg border border-white/10 bg-[#0a0a0f] shadow-[0_0_30px_rgba(0,0,0,0.5)] px-3 py-3 text-sm text-white/50">
-                                            No users found for "{searchQuery}"
-                                        </div>
-                                    )}
+                            <SH title="Ticket Details" />
+                            <div className="flex flex-col gap-1">
+                                <FL>Ticket Subject</FL>
+                                <TI name="ticket_subject" value={form.ticket_subject || ""} onChange={handleInputChange} placeholder="Briefly describe the issue…" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex flex-col gap-1"><FL>Department</FL>{TS("department","Select…",["Admin","Accounting","Business Development","Customer Service Representative","Engineering","E-Commerce","Human Resources","Information Technology","Marketing","Procurement","Product Development","Sales","Warehouse Operations","Management"],form.department||"",(v)=>handleSelectChange("department",v))}</div>
+                                <div className="flex flex-col gap-1"><FL>Request Type</FL>{TS("request_type","Select…",["Advisory","Incident","Maintenance","Major Incident","Request","Service Request"],form.request_type||"",(v)=>handleSelectChange("request_type",v))}</div>
+                                <div className="flex flex-col gap-1"><FL>Type of Concern</FL>{TS("type_concern","Select…",["Incident","Request"],form.type_concern||"",(v)=>handleSelectChange("type_concern",v))}</div>
+                                <div className="flex flex-col gap-1"><FL>Mode</FL>{TS("mode","Select…",["Chat","Email","Phone Call","System Directory","Walk In","Web Form"],form.mode||"",(v)=>handleSelectChange("mode",v))}</div>
+                                <div className="flex flex-col gap-1"><FL>Services Group</FL>{TS("group_services","Select…",["Service Desk","System and Website Services"],form.group_services||"",(v)=>handleSelectChange("group_services",v))}</div>
+                                <div className="flex flex-col gap-1"><FL>Site</FL>{TS("site","Select…",["Disruptive - Primex","Disruptive - J&L","Buildchem - Carmona","Disruptive - Pasig","Disruptive - CDO","Disruptive - Cebu","Disruptive - Davao","Disruptive - Granville"],form.site||"",(v)=>handleSelectChange("site",v))}</div>
+                            </div>
+                        </div>
+
+                        {/* Right column */}
+                        <div className="px-6 py-4 space-y-3">
+
+                            <SH title="Priority & Status" />
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex flex-col gap-1 col-span-2">
+                                    <FL>Priority</FL>
+                                    <select className="w-full text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none" style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }} value={form.priority || ""} onChange={(e) => handleSelectChange("priority", e.target.value)}>
+                                        <option value="">Select priority…</option>
+                                        {[{v:"Critical",l:"P-1 · Critical",s:"4h SLA"},{v:"High",l:"P-2 · High",s:"8h SLA"},{v:"Medium",l:"P-3 · Medium",s:"2d SLA"},{v:"Low",l:"P-4 · Low",s:"4d SLA"}].map((p) => (
+                                            <option key={p.v} value={p.v}>{p.l} ({p.s})</option>
+                                        ))}
+                                    </select>
                                 </div>
+                                <div className="flex flex-col gap-1 col-span-2">
+                                    <FL>Status</FL>
+                                    {TS("status","Select status…",["Pending","Scheduled","Ongoing","Resolved"],form.status||"",(v)=>handleSelectChange("status",v))}
+                                </div>
+                            </div>
+
+                            <SH title="Actions & Dates" />
+                            <div className="flex flex-col gap-1">
+                                <FL>Actions / Remarks</FL>
+                                <textarea name="remarks" value={form.remarks || ""} onChange={(e) => handleSelectChange("remarks", e.target.value)} rows={5}
+                                    placeholder="> describe actions taken or notes…"
+                                    className="w-full text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-2 resize-none focus:outline-none placeholder:text-white/20"
+                                    style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }} />
+                            </div>
+                            {isScheduled && (
+                                <div className="flex flex-col gap-1"><FL>Date Scheduled</FL><TI type="date" name="date_scheduled" value={form.date_scheduled || ""} onChange={handleInputChange} /></div>
                             )}
-                        </div>
-
-                        <SectionHeader icon="🗂️" title="Ticket Details" />
-
-                        {/* Ticket Subject */}
-                        <div className="flex flex-col">
-                            <FieldLabel>Ticket Subject</FieldLabel>
-                            <Input
-                                name="ticket_subject"
-                                value={form.ticket_subject || ""}
-                                onChange={handleInputChange}
-                                placeholder="Briefly describe the issue or request"
-                                className="capitalize"
-                            />
-                        </div>
-
-                        {/* Two-column grid for selects */}
-                        <div className="grid grid-cols-2 gap-3">
-                            {/* Department */}
-                            <div className="flex flex-col">
-                                <FieldLabel>Department</FieldLabel>
-                                <Select value={form.department || ""} onValueChange={(v) => handleSelectChange("department", v)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {[
-                                            "Admin", "Accounting", "Business Development",
-                                            "Customer Service Representative", "Engineering",
-                                            "E-Commerce", "Human Resources", "Information Technology",
-                                            "Marketing", "Procurement", "Product Development",
-                                            "Sales", "Warehouse Operations",
-                                        ].map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                                        <SelectItem value="Management">Management / Director</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Request Type */}
-                            <div className="flex flex-col">
-                                <FieldLabel>Request Type</FieldLabel>
-                                <Select value={form.request_type || ""} onValueChange={(v) => handleSelectChange("request_type", v)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {[
-                                            "Advisory", "Incident", "Maintenance",
-                                            "Major Incident",
-                                            "Request", "Service Request",
-                                        ].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Type of Concern */}
-                            <div className="flex flex-col">
-                                <FieldLabel>Type of Concern</FieldLabel>
-                                <Select value={form.type_concern || ""} onValueChange={(v) => handleSelectChange("type_concern", v)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Incident">Incident</SelectItem>
-                                        <SelectItem value="Request">Request</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Mode */}
-                            <div className="flex flex-col">
-                                <FieldLabel>Mode</FieldLabel>
-                                <Select value={form.mode || ""} onValueChange={(v) => handleSelectChange("mode", v)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Chat">Chat</SelectItem>
-                                        <SelectItem value="Email">Email</SelectItem>
-                                        <SelectItem value="Phone Call">Phone Call</SelectItem>
-                                        <SelectItem value="System Directory">System Directory</SelectItem>
-                                        <SelectItem value="Walk In">Walk In</SelectItem>
-                                        <SelectItem value="Web Form">Web Form</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Services Group */}
-                            <div className="flex flex-col">
-                                <FieldLabel>Services Group</FieldLabel>
-                                <Select value={form.group_services || ""} onValueChange={(v) => handleSelectChange("group_services", v)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Service Desk">Service Desk</SelectItem>
-                                        <SelectItem value="System and Website Services">System & Website Services</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Site */}
-                            <div className="flex flex-col">
-                                <FieldLabel>Site</FieldLabel>
-                                <Select value={form.site || ""} onValueChange={(v) => handleSelectChange("site", v)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {[
-                                            "Disruptive - Primex", "Disruptive - J&L",
-                                            "Buildchem - Carmona", "Disruptive - Pasig",
-                                            "Disruptive - CDO", "Disruptive - Cebu",
-                                            "Disruptive - Davao", "Disruptive - Granville",
-                                        ].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <SectionHeader icon="⚡" title="Priority & Status" />
-
-                        <div className="grid grid-cols-2 gap-3">
-                            {/* Priority */}
-                            <div className="flex flex-col col-span-2">
-                                <FieldLabel>Priority</FieldLabel>
-                                <Select value={form.priority || ""} onValueChange={(v) => handleSelectChange("priority", v)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select priority…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {[
-                                            { value: "Critical", label: "P-1 · Critical", sub: "Response 15 min · Resolved 4 hrs", color: "text-red-400" },
-                                            { value: "High", label: "P-2 · High", sub: "Response 1 hr · Resolved 8 hrs", color: "text-orange-400" },
-                                            { value: "Medium", label: "P-3 · Medium", sub: "Response 4 hrs · Resolved 1–2 days", color: "text-yellow-400" },
-                                            { value: "Low", label: "P-4 · Low", sub: "Response 8 hrs · Resolved 3–4 days", color: "text-emerald-400" },
-                                        ].map((p) => (
-                                            <SelectItem key={p.value} value={p.value}>
-                                                <span className={`font-semibold ${p.color}`}>{p.label}</span>
-                                                <span className="text-white/40 text-xs ml-2">({p.sub})</span>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Status */}
-                            <div className="flex flex-col col-span-2">
-                                <FieldLabel>Status</FieldLabel>
-                                <Select value={form.status || ""} onValueChange={(v) => handleSelectChange("status", v)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select status…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {["Pending", "Scheduled", "Ongoing", "Resolved"].map((s) => (
-                                            <SelectItem key={s} value={s}>{s}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <SectionHeader icon="📝" title="Actions & Dates" />
-
-                        {/* Remarks */}
-                        <div className="flex flex-col">
-                            <FieldLabel>Actions / Remarks</FieldLabel>
-                            <textarea
-                                name="remarks"
-                                value={form.remarks || ""}
-                                onChange={(e) => handleSelectChange("remarks", e.target.value)}
-                                rows={4}
-                                placeholder="Describe the actions taken or notes…"
-                                className="rounded-md border border-white/10 bg-[#0a0a0f] px-3 py-2 text-sm text-white resize-none focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all placeholder:text-white/40"
-                            />
-                        </div>
-
-                        {/* Date Scheduled — only when Scheduled */}
-                        {isScheduled && (
-                            <div className="flex flex-col">
-                                <FieldLabel>Date Scheduled</FieldLabel>
-                                <Input
-                                    type="date"
-                                    name="date_scheduled"
-                                    value={form.date_scheduled || ""}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                        )}
-
-                        {/* Date Created — hidden when Scheduled */}
-                        {!isScheduled && (
-                            <div className="flex flex-col">
-                                <FieldLabel>Date Created</FieldLabel>
-                                <Input
-                                    type="datetime-local"
-                                    name="date_created"
-                                    value={toDateTimeLocalString(form.date_created)}
-                                    onChange={onDateCreatedChange}
-                                />
-                            </div>
-                        )}
-
-                        {/* Date Closed — only when Resolved */}
-                        {isResolved && (
-                            <div className="flex flex-col">
-                                <FieldLabel>Date Closed</FieldLabel>
-                                <Input
-                                    type="datetime-local"
-                                    name="date_closed"
-                                    value={toDateTimeLocalString(form.date_closed)}
-                                    onChange={onDateClosedChange}
-                                />
-                            </div>
-                        )}
-
-                        {/* Proof of Completion — only when Resolved */}
-                        {isResolved && (
-                            <div
-                                className="flex flex-col"
-                                onPaste={async (e: React.ClipboardEvent<HTMLDivElement>) => {
+                            {!isScheduled && (
+                                <div className="flex flex-col gap-1"><FL>Date Created</FL><TI type="datetime-local" name="date_created" value={toDateTimeLocalString(form.date_created)} onChange={onDateCreatedChange} /></div>
+                            )}
+                            {isResolved && (
+                                <div className="flex flex-col gap-1"><FL>Date Closed</FL><TI type="datetime-local" name="date_closed" value={toDateTimeLocalString(form.date_closed)} onChange={onDateClosedChange} /></div>
+                            )}
+                            {isResolved && (
+                                <div className="flex flex-col gap-1" onPaste={async (e: React.ClipboardEvent<HTMLDivElement>) => {
                                     for (const item of e.clipboardData.items) {
                                         if (item.type.startsWith("image/")) {
                                             const file = item.getAsFile();
                                             if (!file) return;
-                                            try {
-                                                const url = await handleImageUpload(file);
-                                                handleSelectChange("proof_of_completion", url);
-                                            } catch (err) {
-                                                console.error("Paste upload failed", err);
-                                            }
+                                            try { const url = await handleImageUpload(file); handleSelectChange("proof_of_completion", url); } catch (err) { console.error(err); }
                                         }
                                     }
-                                }}
-                            >
-                                <FieldLabel>Proof of Completion</FieldLabel>
-
-                                {form.proof_of_completion && (
-                                    <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-md">
-                                        <span className="text-emerald-400 text-xs">✅ Proof uploaded</span>
-                                        <a
-                                            href={form.proof_of_completion}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-primary underline text-xs font-medium hover:text-white"
-                                        >
-                                            View
-                                        </a>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSelectChange("proof_of_completion", "")}
-                                            className="ml-auto text-red-400 hover:text-red-300 text-xs font-bold transition-colors"
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                )}
-
-                                <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-                                        try {
-                                            const url = await handleImageUpload(file);
-                                            handleSelectChange("proof_of_completion", url);
-                                        } catch (err) {
-                                            console.error("File upload failed", err);
-                                        } finally {
-                                            e.target.value = "";
-                                        }
-                                    }}
-                                />
-                                <p className="text-[11px] text-white/40 mt-1.5 flex items-center gap-1">
-                                    <span>💡</span> You can also paste an image directly from your clipboard.
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Bottom spacer */}
-                        <div className="h-2" />
+                                }}>
+                                    <FL>Proof of Completion</FL>
+                                    {form.proof_of_completion && (
+                                        <div className="flex items-center gap-2 mb-2 px-3 py-2" style={{ border: "1px solid rgba(34,197,94,0.25)", backgroundColor: "rgba(34,197,94,0.04)" }}>
+                                            <span className="text-[10px] font-mono text-[#22c55e]/70">✓ proof uploaded</span>
+                                            <a href={form.proof_of_completion} target="_blank" rel="noopener noreferrer" className="text-[10px] font-mono text-[#f97316]/70 hover:text-[#f97316] underline ml-1">view</a>
+                                            <button type="button" onClick={() => handleSelectChange("proof_of_completion", "")} className="ml-auto text-[10px] font-mono text-[#ef4444]/60 hover:text-[#ef4444]">remove</button>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/*"
+                                        className="text-[10px] font-mono text-white/40 file:text-[#f97316]/70 file:text-[9px] file:font-mono file:uppercase file:tracking-widest file:px-2 file:py-1 file:mr-2 file:cursor-pointer"
+                                        style={{ "--file-bg": "#080c10" } as React.CSSProperties}
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            try { const url = await handleImageUpload(file); handleSelectChange("proof_of_completion", url); } catch (err) { console.error(err); } finally { e.target.value = ""; }
+                                        }} />
+                                    <p className="text-[9px] font-mono text-white/20 mt-1">You can also paste an image from clipboard.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-                    {/* ── Footer ── */}
-                    <SheetFooter className="px-6 py-4 border-t border-white/10 bg-[rgba(0,0,0,0.3)] shrink-0 flex justify-end gap-3">
-                        <Button 
-                            variant="outline" 
-                            onClick={handleAttemptClose} 
-                            className="min-w-[100px] border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={editingId ? handleUpdate : handleSubmit}
-                            variant="neon"
-                            className="min-w-[140px] neon-button font-semibold"
-                        >
-                            {editingId ? "Update Ticket" : "Create Ticket"}
-                        </Button>
-                    </SheetFooter>
-                </SheetContent>
-            </Sheet>
+                </div>
+            </div>
 
             {/* Confirm discard dialog */}
             <Dialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
-                <DialogContent className="sm:max-w-[380px] w-full p-6 glass-card border-white/10">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-white/90">
-                            <span>⚠️</span> Discard changes?
-                        </DialogTitle>
-                        <DialogDescription className="mt-1 text-white/60">
-                            You have unsaved changes. Closing will reset the form and all changes will be lost.
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-[360px] rounded-none p-0" style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.1)", zIndex: 60 }}>
+                    <DialogHeader className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                        <DialogTitle className="text-[11px] font-mono font-bold text-[#eab308] uppercase tracking-[0.2em]">⚠ Discard changes?</DialogTitle>
+                        <DialogDescription className="text-[10px] font-mono text-white/30 mt-1">You have unsaved changes. Closing will reset the form.</DialogDescription>
                     </DialogHeader>
-                    <div className="mt-5 flex justify-end gap-3">
-                        <Button 
-                            variant="outline" 
-                            onClick={cancelClose}
-                            className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
-                        >
-                            Keep editing
-                        </Button>
-                        <Button 
-                            variant="destructive" 
-                            onClick={confirmClose}
-                            className="bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
-                        >
-                            Discard
-                        </Button>
+                    <div className="flex justify-end gap-2 px-5 py-4">
+                        <button onClick={() => setShowConfirmClose(false)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-white/40 hover:text-[#f97316] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>Keep editing</button>
+                        <button onClick={confirmClose} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors" style={{ border: "1px solid rgba(239,68,68,0.4)" }}>Discard</button>
                     </div>
                 </DialogContent>
             </Dialog>

@@ -1,57 +1,23 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, Suspense } from "react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Cell } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { useSearchParams } from "next/navigation";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import { FormatProvider } from "@/contexts/FormatContext";
 import { SidebarLeft } from "@/components/sidebar-left";
 import { SidebarRight } from "@/components/sidebar-right";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { type DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { supabase } from "@/utils/supabase";
 import { fetchAllSupabaseRows } from "@/utils/supabase-fetch-all";
 
-import { StatusCard } from "@/components/dashboard/dashboard-card-status";
-
 interface RequestItem {
-  id: string; // supabase id
+  id: string;
   status: string;
   request_type: string;
   type_concern: string;
@@ -67,556 +33,413 @@ interface RequestItem {
   department: string;
 }
 
-interface UserDetails {
-  referenceid: string;
+// ─── status meta ──────────────────────────────────────────────────────────────
+
+const STATUS_META: Record<string, { label: string; color: string; dot: string; desc: string }> = {
+  resolved:  { label: "RESOLVED",  color: "#3b82f6", dot: "#3b82f6", desc: "Tickets successfully closed." },
+  ongoing:   { label: "ONGOING",   color: "#f97316", dot: "#f97316", desc: "Currently being worked on." },
+  pending:   { label: "PENDING",   color: "#eab308", dot: "#eab308", desc: "Awaiting action or information." },
+  scheduled: { label: "SCHEDULED", color: "#06b6d4", dot: "#06b6d4", desc: "Planned for future resolution." },
+};
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function KVRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline gap-2 text-[11px] font-mono">
+      <span className="text-[#f97316]/60 shrink-0">{label}</span>
+      <span className="flex-1 border-b border-dashed border-[#2a2a1a]" />
+      <span className="text-[#e5e5d0]/70 shrink-0">{value}</span>
+    </div>
+  );
 }
 
-function DashboardContent() {
-  const [dateCreatedFilterRange, setDateCreatedFilterRangeAction] = React.useState<
-    DateRange | undefined
-  >(undefined);
+function PanelHeader({ dot, title, sub, right }: { dot?: string; title: string; sub?: string; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-2.5 border-b border-[rgba(255,255,255,0.06)]">
+      <div className="flex items-center gap-2">
+        {dot && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dot }} />}
+        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: dot || "#e5e5d0" }}>
+          {title}
+        </span>
+        {sub && <span className="text-[9px] font-mono text-[#6b6b4a]/50 ml-1">{sub}</span>}
+      </div>
+      {right}
+    </div>
+  );
+}
 
+// ─── main ─────────────────────────────────────────────────────────────────────
+
+function DashboardContent() {
+  const [dateCreatedFilterRange, setDateCreatedFilterRangeAction] = React.useState<DateRange | undefined>(undefined);
   const searchParams = useSearchParams();
   const { userId, setUserId } = useUser();
 
   const [activities, setActivities] = useState<RequestItem[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [errorActivities, setErrorActivities] = useState<string | null>(null);
-
   const [loadingUser, setLoadingUser] = useState(true);
   const [errorUser, setErrorUser] = useState<string | null>(null);
 
-  const [userDetails, setUserDetails] = useState<UserDetails>({
-    referenceid: "",
-  });
-
-  // Get userId from URL query param
   const queryUserId = searchParams?.get("id") ?? "";
 
-  // Sync context with URL param on mount or param change
   useEffect(() => {
-    if (queryUserId && queryUserId !== userId) {
-      setUserId(queryUserId);
-    }
+    if (queryUserId && queryUserId !== userId) setUserId(queryUserId);
   }, [queryUserId, userId, setUserId]);
 
-  // Fetch user details when userId changes
   useEffect(() => {
-    if (!userId) {
-      setErrorUser("User ID is missing.");
-      setLoadingUser(false);
-      return;
-    }
-
-    const fetchUserData = async () => {
-      setErrorUser(null);
-      setLoadingUser(true);
+    if (!userId) { setErrorUser("User ID is missing."); setLoadingUser(false); return; }
+    const run = async () => {
+      setErrorUser(null); setLoadingUser(true);
       try {
-        const response = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
-        if (!response.ok) throw new Error("Failed to fetch user data");
-        const data = await response.json();
-
-        setUserDetails({
-          referenceid: data.ReferenceID || "",
-        });
-
+        const res = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
+        if (!res.ok) throw new Error("Failed to fetch user data");
+        await res.json();
         toast.success("User data loaded successfully!");
       } catch (err) {
-        console.error("Error fetching user data:", err);
-        setErrorUser(
-          "Failed to connect to server. Please try again later or check your network connection."
-        );
-        toast.error(
-          "Failed to connect to server. Please try again later or refresh your network connection"
-        );
-      } finally {
-        setLoadingUser(false);
-      }
+        console.error(err);
+        setErrorUser("Failed to connect to server.");
+        toast.error("Failed to connect to server. Please refresh.");
+      } finally { setLoadingUser(false); }
     };
-
-    fetchUserData();
+    run();
   }, [userId]);
 
-  // Fetch all tickets without referenceid filter
   const fetchActivities = useCallback(async () => {
-    setLoadingActivities(true);
-    setErrorActivities(null);
-
+    setLoadingActivities(true); setErrorActivities(null);
     try {
-      const data = await fetchAllSupabaseRows<RequestItem>(
-        "tickets",
-        "*",
-        { column: "date_created", ascending: false }
-      );
-
+      const data = await fetchAllSupabaseRows<RequestItem>("tickets", "*", { column: "date_created", ascending: false });
       setActivities(data);
     } catch (error: any) {
       setErrorActivities(error.message || "Error fetching tickets");
       toast.error(error.message || "Error fetching tickets");
-    } finally {
-      setLoadingActivities(false);
-    }
+    } finally { setLoadingActivities(false); }
   }, []);
 
+  useEffect(() => { fetchActivities(); }, [fetchActivities]);
+
   useEffect(() => {
-    fetchActivities();
-  }, [fetchActivities]);
-
-  // Subscribe to all tickets changes (no referenceid filter)
-  useEffect(() => {
-    const channel = supabase
-      .channel(`public:tickets`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "tickets",
-        },
-        (payload) => {
-          const newRecord = payload.new as RequestItem;
-          const oldRecord = payload.old as RequestItem;
-
-          setActivities((curr) => {
-            switch (payload.eventType) {
-              case "INSERT":
-                if (!curr.some((a) => a.id === newRecord.id)) {
-                  return [...curr, newRecord];
-                }
-                return curr;
-              case "UPDATE":
-                return curr.map((a) => (a.id === newRecord.id ? newRecord : a));
-              case "DELETE":
-                return curr.filter((a) => a.id !== oldRecord.id);
-              default:
-                return curr;
-            }
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const channel = supabase.channel("public:tickets")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, (payload) => {
+        const n = payload.new as RequestItem;
+        const o = payload.old as RequestItem;
+        setActivities((curr) => {
+          switch (payload.eventType) {
+            case "INSERT": return curr.some((a) => a.id === n.id) ? curr : [...curr, n];
+            case "UPDATE": return curr.map((a) => (a.id === n.id ? n : a));
+            case "DELETE": return curr.filter((a) => a.id !== o.id);
+            default: return curr;
+          }
+        });
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
-  function parseDate(dateStr?: string) {
-    if (!dateStr) return null;
-    const d = new Date(dateStr);
+  function parseDate(s?: string) {
+    if (!s) return null;
+    const d = new Date(s);
     return isNaN(d.getTime()) ? null : d;
   }
 
-  // Filter activities based on dateCreatedFilterRange
   const filteredActivities = React.useMemo(() => {
-    if (
-      !dateCreatedFilterRange ||
-      (!dateCreatedFilterRange.from && !dateCreatedFilterRange.to)
-    ) {
-      return activities;
-    }
-
-    const fromTime = dateCreatedFilterRange.from
-      ? dateCreatedFilterRange.from.getTime()
-      : -Infinity;
-
-    const toTime = dateCreatedFilterRange.to
-      ? new Date(
-        dateCreatedFilterRange.to.getFullYear(),
-        dateCreatedFilterRange.to.getMonth(),
-        dateCreatedFilterRange.to.getDate(),
-        23,
-        59,
-        59,
-        999
-      ).getTime()
+    if (!dateCreatedFilterRange?.from && !dateCreatedFilterRange?.to) return activities;
+    const from = dateCreatedFilterRange?.from?.getTime() ?? -Infinity;
+    const to = dateCreatedFilterRange?.to
+      ? new Date(dateCreatedFilterRange.to.getFullYear(), dateCreatedFilterRange.to.getMonth(), dateCreatedFilterRange.to.getDate(), 23, 59, 59, 999).getTime()
       : Infinity;
-
-    return activities.filter((item) => {
-      const date = parseDate(item.date_created);
-      if (!date) return false;
-      const time = date.getTime();
-      return time >= fromTime && time <= toTime;
-    });
+    return activities.filter((item) => { const d = parseDate(item.date_created); return d ? d.getTime() >= from && d.getTime() <= to : false; });
   }, [activities, dateCreatedFilterRange]);
 
-  // Count items by status using filteredActivities
-  const counts = React.useMemo(() => {
-    const normalize = (status?: string) => status?.toLowerCase() ?? "";
+  const grandTotal = filteredActivities.length;
 
+  const counts = React.useMemo(() => {
+    const n = (s?: string) => s?.toLowerCase() ?? "";
     return {
-      resolved: filteredActivities.filter(
-        (item) => normalize(item.status) === "resolved"
-      ).length,
-      ongoing: filteredActivities.filter(
-        (item) => normalize(item.status) === "ongoing"
-      ).length,
-      pending: filteredActivities.filter(
-        (item) => normalize(item.status) === "pending"
-      ).length,
-      scheduled: filteredActivities.filter(
-        (item) => normalize(item.status) === "scheduled"
-      ).length,
+      resolved:  filteredActivities.filter((i) => n(i.status) === "resolved").length,
+      ongoing:   filteredActivities.filter((i) => n(i.status) === "ongoing").length,
+      pending:   filteredActivities.filter((i) => n(i.status) === "pending").length,
+      scheduled: filteredActivities.filter((i) => n(i.status) === "scheduled").length,
     };
   }, [filteredActivities]);
 
-  const advisoryTickets = React.useMemo(() => {
-    return filteredActivities.filter(
-      (item) =>
-        item.request_type === "Advisory" &&
-        item.status.toLowerCase() !== "resolved"
-    );
-  }, [filteredActivities]);
+  const advisoryTickets = React.useMemo(() =>
+    filteredActivities.filter((i) => i.request_type === "Advisory" && i.status.toLowerCase() !== "resolved"),
+    [filteredActivities]);
 
-  const criticalTickets = React.useMemo(() => {
-    return filteredActivities.filter(
-      (item) =>
-        item.priority?.toLowerCase() === "critical" &&
-        item.status.toLowerCase() !== "resolved"
-    );
-  }, [filteredActivities]);
+  const criticalTickets = React.useMemo(() =>
+    filteredActivities.filter((i) => i.priority?.toLowerCase() === "critical" && i.status.toLowerCase() !== "resolved"),
+    [filteredActivities]);
 
-  // Format processor name for display (capitalize each word)
-  const formatProcessorName = (key: string) => {
-    if (key === "unassigned") return "Unassigned";
-    return key
-      .split(" ")
-      .map(
-        (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-      )
-      .join(" ");
-  };
+  const normalizeKey = (s?: string) =>
+    s ? s.trim().toLowerCase().replace(/\s+/g, " ").replace(/\s*,\s*/g, ", ").replace(/^,|,$/g, "") || "unassigned" : "unassigned";
 
-  // Normalize processor key for grouping (fuzzy)
-  const normalizeProcessorKey = (str?: string) => {
-    if (!str) return "unassigned";
-
-    // Trim, lowercase
-    let key = str.trim().toLowerCase();
-
-    // Replace multiple spaces with single space
-    key = key.replace(/\s+/g, " ");
-
-    // Remove spaces around commas
-    key = key.replace(/\s*,\s*/g, ", ");
-
-    // Remove trailing/leading commas
-    key = key.replace(/^,|,$/g, "");
-
-    return key || "unassigned";
-  };
+  const formatName = (k: string) =>
+    k === "unassigned" ? "Unassigned" : k.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 
   const groupedByProcessor = React.useMemo(() => {
-    const groups: Record<string, RequestItem[]> = {};
-    for (const item of filteredActivities) {
-      const key = normalizeProcessorKey(item.processed_by);
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(item);
-    }
-    return groups;
+    const g: Record<string, RequestItem[]> = {};
+    for (const item of filteredActivities) { const k = normalizeKey(item.processed_by); if (!g[k]) g[k] = []; g[k].push(item); }
+    return g;
   }, [filteredActivities]);
 
-  // Sorted array of [processorKey, tickets] entries by descending ticket count
-  const sortedGroupedByProcessor = React.useMemo(() => {
-    return Object.entries(groupedByProcessor).sort(([, a], [, b]) => b.length - a.length);
-  }, [groupedByProcessor]);
+  const sortedGrouped = React.useMemo(() =>
+    Object.entries(groupedByProcessor).sort(([, a], [, b]) => b.length - a.length),
+    [groupedByProcessor]);
 
-  // Prepare data for BarChart with formatted display names
-  const barChartData = React.useMemo(() => {
-    return sortedGroupedByProcessor.map(([processorKey, tickets]) => ({
-      processor: formatProcessorName(processorKey),
-      total: tickets.length,
-    }));
-  }, [sortedGroupedByProcessor]);
+  const barChartData = React.useMemo(() =>
+    sortedGrouped.map(([k, t]) => ({ processor: formatName(k), total: t.length })),
+    [sortedGrouped]);
 
-  // Chart config for consistent colors etc
   const chartConfig = React.useMemo(() => {
-    const config: Record<string, { label: string; color?: string }> = {};
-    barChartData.forEach((d, i) => {
-      config[d.processor] = {
-        label: d.processor,
-        color: `var(--chart-${(i % 5) + 1})`,
-      };
-    });
-    return config satisfies ChartConfig;
+    const c: Record<string, { label: string; color?: string }> = {};
+    barChartData.forEach((d, i) => { c[d.processor] = { label: d.processor, color: `var(--chart-${(i % 5) + 1})` }; });
+    return c satisfies ChartConfig;
   }, [barChartData]);
 
-  // Count tickets per requestor_name
-  const countsByRequestor = React.useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const item of filteredActivities) {
-      const key = item.closed_by?.trim() || "Unknown";
-      counts[key] = (counts[key] || 0) + 1;
-    }
-    return counts;
+  const countsByDepartment = React.useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const item of filteredActivities) { const k = item.department?.trim() || "Unknown"; c[k] = (c[k] || 0) + 1; }
+    return Object.entries(c).sort(([, a], [, b]) => b - a);
   }, [filteredActivities]);
 
-  // Count tickets per department
-  const countsByDepartment = React.useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const item of filteredActivities) {
-      const key = item.department?.trim() || "Unknown";
-      counts[key] = (counts[key] || 0) + 1;
-    }
-    return counts;
+  const countsByRequestor = React.useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const item of filteredActivities) { const k = item.closed_by?.trim() || "Unknown"; c[k] = (c[k] || 0) + 1; }
+    return Object.entries(c).sort(([, a], [, b]) => b - a);
   }, [filteredActivities]);
+
+  const PANEL_BG = "rgba(255,255,255,0.02)";
+  const PANEL_BORDER = "rgba(255,255,255,0.07)";
+
+  // ─── render ────────────────────────────────────────────────────────────────
 
   return (
     <>
       <SidebarLeft />
-      <SidebarInset className="bg-black">
-        <header className="bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-[rgba(255,255,255,0.1)] sticky top-0 flex h-14 shrink-0 items-center gap-2 z-10">
-          <div className="flex flex-1 items-center gap-2 px-4">
-            <SidebarTrigger className="text-white/70 hover:text-white hover:bg-white/10" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4 bg-white/20"
-            />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1 text-white/90 font-medium">
-                    Dashboard
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+      <SidebarInset style={{ backgroundColor: "#080c10", minHeight: "100%" }}>
+
+        {/* Header */}
+        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 px-4"
+          style={{ backgroundColor: "rgba(8,12,16,0.95)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <SidebarTrigger className="text-white/40 hover:text-white/80 hover:bg-white/5" />
+          <Separator orientation="vertical" className="h-3.5 mx-1" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-[11px] font-mono text-white/60 uppercase tracking-widest">
+                  Dashboard
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
+            <span className="text-[9px] font-mono text-[#22c55e]/60 uppercase tracking-widest">live</span>
           </div>
         </header>
-        <main className="flex flex-col gap-6 p-6 overflow-auto bg-gradient-to-b from-black to-[#0a0a0f] min-h-[calc(100vh-3.5rem)]">
+
+        <main className="p-5 flex flex-col gap-5" style={{ minHeight: "calc(100vh - 3rem)" }}>
+
           {loadingUser ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-pulse text-white/60">Loading user data...</div>
+            <div className="flex items-center gap-2 justify-center h-32">
+              <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:0ms]" />
+              <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:150ms]" />
+              <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:300ms]" />
+              <span className="text-[10px] font-mono text-white/30 ml-1 uppercase tracking-widest">Loading...</span>
             </div>
           ) : errorUser ? (
-            <div className="glass-card p-4 rounded-lg border border-red-500/30">
-              <p className="text-red-400 font-semibold">{errorUser}</p>
+            <div className="border px-4 py-3 flex items-start gap-2" style={{ borderColor: "rgba(239,68,68,0.3)", backgroundColor: "rgba(239,68,68,0.05)" }}>
+              <span className="text-[#ef4444] font-mono text-xs mt-0.5">✕</span>
+              <p className="text-[11px] font-mono text-[#ef4444]/80">{errorUser}</p>
             </div>
           ) : (
             <>
+              {/* Loading */}
               {loadingActivities && (
-                <div className="flex items-center justify-center h-32">
-                  <div className="animate-pulse text-white/60">Loading activities...</div>
-                </div>
-              )}
-              {errorActivities && (
-                <div className="glass-card p-4 rounded-lg border border-red-500/30">
-                  <p className="text-red-400 font-semibold">{errorActivities}</p>
+                <div className="flex items-center gap-2 justify-center py-3">
+                  <span className="w-1 h-1 bg-[#06b6d4] animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1 h-1 bg-[#06b6d4] animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1 h-1 bg-[#06b6d4] animate-bounce [animation-delay:300ms]" />
+                  <span className="text-[10px] font-mono text-white/30 ml-1 uppercase tracking-widest">Fetching tickets...</span>
                 </div>
               )}
 
+              {/* Alerts */}
               {advisoryTickets.length > 0 && (
-                <div className="w-full animate-fade-in">
-                  <Alert className="w-full border-orange-500/50 bg-[rgba(249,115,22,0.1)] backdrop-blur-sm">
-                    <AlertTitle className="font-semibold text-orange-400">
-                      Advisory Notice
-                    </AlertTitle>
-
-                    <AlertDescription className="space-y-4 text-sm leading-relaxed text-white/80">
-                      {advisoryTickets.map((item) => (
-                        <div
-                          key={item.id}
-                          className="w-full rounded-md border border-orange-500/20 bg-[#0a0a0f]/80 p-4 backdrop-blur-sm"
-                        >
-                          <p>
-                            This ticket is classified as an <strong>{item.request_type}</strong> request
-                            concerning <strong>{item.type_concern}</strong>.
-                          </p>
-
-                          <p className="mt-1">
-                            The issue is logged under <strong>Ticket ID {item.ticket_id}</strong> with the
-                            subject <strong>“{item.ticket_subject}”</strong>.
-                          </p>
-
-                          <p className="mt-1">
-                            It is currently being handled by <strong>{item.technician_name}</strong> at
-                            the <strong>{item.site}</strong> site.
-                          </p>
-
-                          <p className="mt-1">
-                            <strong>Remarks:</strong> {item.remarks || "No additional remarks provided."}
-                          </p>
-                        </div>
-                      ))}
-                    </AlertDescription>
-                  </Alert>
+                <div className="border" style={{ borderColor: "rgba(249,115,22,0.3)", backgroundColor: "rgba(249,115,22,0.04)" }}>
+                  <PanelHeader dot="#f97316" title="Advisory Notice" />
+                  <div className="p-4 space-y-3">
+                    {advisoryTickets.map((item) => (
+                      <div key={item.id} className="px-4 py-3 space-y-1.5 border" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                        <KVRow label="ticket_id" value={item.ticket_id} />
+                        <KVRow label="subject" value={item.ticket_subject} />
+                        <KVRow label="concern" value={item.type_concern} />
+                        <KVRow label="technician" value={item.technician_name} />
+                        <KVRow label="site" value={item.site} />
+                        <KVRow label="remarks" value={item.remarks || "—"} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {criticalTickets.length > 0 && (
-                <div className="w-full animate-fade-in">
-                  <Alert className="w-full border-red-500/50 bg-[rgba(239,68,68,0.1)] backdrop-blur-sm shadow-[0_0_30px_rgba(239,68,68,0.2)]">
-                    <AlertTitle className="font-semibold text-red-400">
-                      🚨 Critical Priority Alert
-                    </AlertTitle>
-
-                    <AlertDescription className="space-y-4 text-sm leading-relaxed text-white/80">
-                      {criticalTickets.map((item) => (
-                        <div
-                          key={item.id}
-                          className="w-full rounded-md border border-red-500/20 bg-[#0a0a0f]/80 p-4 backdrop-blur-sm"
-                        >
-                          <p>
-                            This ticket is marked as <strong>CRITICAL PRIORITY</strong> and
-                            requires immediate attention regarding{" "}
-                            <strong>{item.type_concern}</strong>.
-                          </p>
-
-                          <p className="mt-1">
-                            The issue is logged under <strong>Ticket ID {item.ticket_id}</strong>{" "}
-                            with the subject <strong>“{item.ticket_subject}”</strong>.
-                          </p>
-
-                          <p className="mt-1">
-                            It is currently being handled by{" "}
-                            <strong>{item.technician_name}</strong> at the{" "}
-                            <strong>{item.site}</strong> site.
-                          </p>
-
-                          <p className="mt-1">
-                            <strong>Remarks:</strong>{" "}
-                            {item.remarks || "No additional remarks provided."}
-                          </p>
-                        </div>
-                      ))}
-                    </AlertDescription>
-                  </Alert>
+                <div className="border" style={{ borderColor: "rgba(239,68,68,0.3)", backgroundColor: "rgba(239,68,68,0.04)" }}>
+                  <PanelHeader dot="#ef4444" title="Critical Priority Alert" />
+                  <div className="p-4 space-y-3">
+                    {criticalTickets.map((item) => (
+                      <div key={item.id} className="px-4 py-3 space-y-1.5 border" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                        <KVRow label="ticket_id" value={item.ticket_id} />
+                        <KVRow label="subject" value={item.ticket_subject} />
+                        <KVRow label="concern" value={item.type_concern} />
+                        <KVRow label="technician" value={item.technician_name} />
+                        <KVRow label="site" value={item.site} />
+                        <KVRow label="remarks" value={item.remarks || "—"} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div className="flex flex-col gap-4">
-                <StatusCard counts={counts} userId={userId ?? undefined} />
+              {/* ── TOTAL TICKETS banner ── */}
+              <div className="border p-5 flex items-end justify-between" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                <div>
+                  <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/40 mb-1">Total Tickets</p>
+                  <p className="text-5xl font-mono font-bold text-white leading-none">{grandTotal}</p>
+                  <p className="text-[10px] font-mono text-white/30 mt-1.5">All tickets regardless of status.</p>
+                </div>
+                <a href="#" className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 border text-[#06b6d4] hover:bg-[#06b6d4]/10 transition-colors"
+                  style={{ borderColor: "rgba(6,182,212,0.3)" }}>
+                  VIEW ALL →
+                </a>
               </div>
 
-              {/* Table ng processed_by with total ticket count */}
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Table Card */}
-                <Card className="flex-1">
-                  <CardHeader>
-                    <CardTitle className="text-white/90 gradient-text">Tickets Count per Processed By</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-auto p-4">
-                    <Table>
-                      <TableCaption>Tickets Count per Processed By</TableCaption>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-left">Processed By</TableHead>
-                          <TableHead className="text-right">Total Tickets</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {sortedGroupedByProcessor.map(([processorKey, tickets]) => (
-                          <TableRow
-                            key={processorKey}
-                          >
-                            <TableCell className="uppercase text-white/70">{formatProcessorName(processorKey)}</TableCell>
-                            <TableCell className="text-right font-medium text-primary">{tickets.length}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-
-                {/* Bar Chart Card */}
-                <Card className="flex-1 flex flex-col">
-                  <CardHeader className="items-center pb-0">
-                    <CardTitle className="text-white/90 gradient-text">Tickets Distribution</CardTitle>
-                    <CardDescription className="text-white/50">Grouped by Processed By</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-1 pb-0">
-                    <ChartContainer
-                      config={chartConfig}
-                      className="[&_.recharts-text]:fill-background mx-auto"
-                      style={{ height: "450px", width: "100%" }}
+              {/* ── STATUS CARDS ── */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border" style={{ borderColor: PANEL_BORDER }}>
+                {Object.entries(STATUS_META).map(([key, meta], idx) => {
+                  const total = counts[key as keyof typeof counts] ?? 0;
+                  const isLast = idx === Object.entries(STATUS_META).length - 1;
+                  return (
+                    <div
+                      key={key}
+                      className={`p-5 flex flex-col gap-3 ${!isLast ? "border-r" : ""}`}
+                      style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}
                     >
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.dot }} />
+                        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: meta.color }}>
+                          {meta.label}
+                        </span>
+                      </div>
+                      <p className="text-4xl font-mono font-bold leading-none" style={{ color: meta.color }}>
+                        {total}
+                      </p>
+                      <p className="text-[9px] font-mono text-white/30 leading-relaxed">{meta.desc}</p>
+                      <a href="#" className="text-[9px] font-mono uppercase tracking-widest mt-auto" style={{ color: meta.color }}>
+                        VIEW →
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ── CHARTS ROW ── */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                {/* Processed By — horizontal bar */}
+                <div className="border flex flex-col" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                  <PanelHeader dot="#06b6d4" title="Tickets per Processed By" sub="Based on processor counts" />
+                  <div className="p-4 flex-1">
+                    <ChartContainer config={chartConfig} style={{ height: "300px", width: "100%" }}>
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={barChartData}
-                          layout="vertical"
-                          margin={{ right: 20, left: 20 }}
-                        >
-                          <CartesianGrid horizontal={false} />
-                          <YAxis
-                            dataKey="processor"
-                            type="category"
-                            tickLine={false}
-                            axisLine={false}
-                            width={180}
-                          />
-                          <XAxis type="number" />
-                          <ChartTooltip
-                            content={<ChartTooltipContent nameKey="total" hideLabel />}
-                          />
-                          <Bar dataKey="total" fill="var(--chart-2)" radius={4}>
-                            <LabelList dataKey="total" position="right" />
+                        <BarChart data={barChartData} layout="vertical" margin={{ right: 32, left: 8 }}>
+                          <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.04)" />
+                          <YAxis dataKey="processor" type="category" tickLine={false} axisLine={false} width={140}
+                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10, fontFamily: "monospace" }} />
+                          <XAxis type="number" tickLine={false} axisLine={false}
+                            tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9, fontFamily: "monospace" }} />
+                          <ChartTooltip content={<ChartTooltipContent nameKey="total" hideLabel />} />
+                          <Bar dataKey="total" fill="#06b6d4" radius={0}>
+                            <LabelList dataKey="total" position="right"
+                              style={{ fill: "rgba(6,182,212,0.8)", fontSize: 10, fontFamily: "monospace" }} />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </ChartContainer>
-                  </CardContent>
-                  <CardFooter className="flex-col gap-2 text-sm">
-                    <div className="text-muted-foreground leading-none">
-                      Showing ticket distribution per processed by user
-                    </div>
-                  </CardFooter>
-                </Card>
-              </div>
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Requestor Name Count */}
-                <Card className="flex-1">
-                  <CardHeader>
-                    <CardTitle>Tickets per Closed By</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-auto p-4">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Requestor Name</TableHead>
-                          <TableHead className="text-right">Total Tickets</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {Object.entries(countsByRequestor).map(([name, count]) => (
-                          <TableRow key={name}>
-                            <TableCell className="uppercase">{name}</TableCell>
-                            <TableCell className="text-right font-medium">{count}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                    <p className="text-[9px] font-mono text-white/25 mt-3">
+                      {sortedGrouped.length} processors · {grandTotal} total
+                    </p>
+                  </div>
+                </div>
 
-                {/* Department Count */}
-                <Card className="flex-1">
-                  <CardHeader>
-                    <CardTitle>Tickets per Department</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-auto p-4">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Department</TableHead>
-                          <TableHead className="text-right">Total Tickets</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {Object.entries(countsByDepartment).map(([dept, count]) => (
-                          <TableRow key={dept}>
-                            <TableCell className="uppercase">{dept}</TableCell>
-                            <TableCell className="text-right font-medium">{count}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                {/* Department — vertical bar */}
+                <div className="border flex flex-col" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                  <PanelHeader dot="#8b5cf6" title="Tickets per Department" sub="Based on department counts" />
+                  <div className="p-4 flex-1">
+                    <ChartContainer config={{}} style={{ height: "300px", width: "100%" }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={countsByDepartment.map(([k, v]) => ({ dept: k, total: v }))} margin={{ top: 16, right: 8, left: 0, bottom: 60 }}>
+                          <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
+                          <XAxis dataKey="dept" tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0}
+                            tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 9, fontFamily: "monospace" }} />
+                          <YAxis tickLine={false} axisLine={false}
+                            tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9, fontFamily: "monospace" }} />
+                          <ChartTooltip content={<ChartTooltipContent nameKey="total" hideLabel />} />
+                          <Bar dataKey="total" radius={0}>
+                            {countsByDepartment.map(([k], i) => (
+                              <Cell key={k} fill="#8b5cf6" fillOpacity={0.7 + (i % 3) * 0.1} />
+                            ))}
+                            <LabelList dataKey="total" position="top"
+                              style={{ fill: "rgba(139,92,246,0.8)", fontSize: 9, fontFamily: "monospace" }} />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                    <p className="text-[9px] font-mono text-white/25 mt-3">
+                      {countsByDepartment.length} departments · {grandTotal} total
+                    </p>
+                  </div>
+                </div>
               </div>
+
+              {/* ── LOCATION / CLOSED BY grid ── */}
+              <div className="border" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                <PanelHeader
+                  dot="#f97316"
+                  title="Closed By Distribution"
+                  sub="Grouped by closing agent"
+                  right={
+                    <span className="text-[9px] font-mono px-2 py-0.5 border" style={{ borderColor: "rgba(249,115,22,0.3)", color: "#f97316" }}>
+                      {countsByRequestor.length} AGENTS
+                    </span>
+                  }
+                />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
+                  {countsByRequestor.map(([name, count], idx) => {
+                    const isLastRow = idx >= countsByRequestor.length - (countsByRequestor.length % 4 || 4);
+                    return (
+                      <div
+                        key={name}
+                        className="flex items-center justify-between px-4 py-3 border-b border-r"
+                        style={{ borderColor: PANEL_BORDER }}
+                      >
+                        <span className="text-[10px] font-mono text-white/60 uppercase truncate max-w-[120px]">{name}</span>
+                        <span className="text-[11px] font-mono font-bold px-2 py-0.5 border ml-2 shrink-0"
+                          style={{ color: "#f97316", borderColor: "rgba(249,115,22,0.3)", backgroundColor: "rgba(249,115,22,0.08)" }}>
+                          {count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
             </>
           )}
         </main>
       </SidebarInset>
+
       <SidebarRight
         userId={userId ?? undefined}
         dateCreatedFilterRange={dateCreatedFilterRange}
@@ -631,7 +454,11 @@ export default function Page() {
     <UserProvider>
       <FormatProvider>
         <SidebarProvider>
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: "#080c10" }}>
+              <span className="text-[10px] font-mono text-white/20 uppercase tracking-widest">Initializing...</span>
+            </div>
+          }>
             <DashboardContent />
           </Suspense>
         </SidebarProvider>
