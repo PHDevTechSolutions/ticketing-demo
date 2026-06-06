@@ -117,6 +117,7 @@ export function useUnreadCounts(ticketIds: string[]) {
             .channel("global-unread-watcher")
             .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_conversations" }, (payload) => {
                 const row = payload.new as ConversationMessage;
+                // only count new unseen messages from requestor (user)
                 if (row.sender !== "user") return;
                 playNotifSound();
                 setUnread((prev) => ({
@@ -124,10 +125,17 @@ export function useUnreadCounts(ticketIds: string[]) {
                     [row.ticket_id]: (prev[row.ticket_id] ?? 0) + 1,
                 }));
             })
-            .on("postgres_changes", { event: "UPDATE", schema: "public", table: "ticket_conversations" }, () => {
-                const ids2 = ticketIdsKey.split(",").filter(Boolean);
-                fetchUnread(ids2);
-            })
+            // re-fetch when is_seen flips — but only matters for user rows
+            .on(
+                "postgres_changes",
+                { event: "UPDATE", schema: "public", table: "ticket_conversations" },
+                (payload) => {
+                    const row = payload.new as ConversationMessage;
+                    if (row.sender !== "user") return; // ignore bot message updates
+                    const ids2 = ticketIdsKey.split(",").filter(Boolean);
+                    fetchUnread(ids2);
+                }
+            )
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
@@ -311,10 +319,11 @@ export const TicketConversationDialog: React.FC<TicketConversationDialogProps> =
                 ticket_id: ticketId,
                 sender: "bot",
                 message: text || "",
-                is_seen: true,
                 file_url: fileUrl,
                 file_type: fileType,
                 file_name: fileName,
+                // is_seen is only meaningful for sender='user' messages
+                // do NOT set it on bot messages
             }]);
             if (error) throw error;
             setInput("");
