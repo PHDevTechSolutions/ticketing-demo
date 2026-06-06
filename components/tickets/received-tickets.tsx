@@ -1,14 +1,12 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { AlertCircleIcon, CheckCircle2Icon, Clock3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { AlertCircleIcon, CheckCircle2Icon, Clock3, MessageSquare } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { type DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { ReceivedDialog } from "@/components/tickets/received-ticket-dialog";
+import { TicketConversationDialog, useUnreadCounts } from "@/components/tickets/ticket-conversation-dialog";
 import { supabase } from "@/utils/supabase";
 import { fetchAllSupabaseRows } from "@/utils/supabase-fetch-all";
 
@@ -150,6 +148,8 @@ export const Received: React.FC<RequestProps> = ({ referenceid, fullname, dateCr
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [, forceTick] = useState(0);
+    const [chatOpen, setChatOpen] = useState(false);
+    const [chatTicket, setChatTicket] = useState<{ ticket_id: string; ticket_subject: string; requestor_name: string } | null>(null);
 
     useEffect(() => {
         const interval = setInterval(() => forceTick((t) => t + 1), 1000);
@@ -164,6 +164,7 @@ export const Received: React.FC<RequestProps> = ({ referenceid, fullname, dateCr
     });
 
     const existingTicketIds = activities.map((item) => item.ticket_id);
+    const { unread, markSeen } = useUnreadCounts(existingTicketIds);
 
     function handleSelectChange(name: string, value: string | string[]) {
         setForm((prev) => ({ ...prev, [name]: value }));
@@ -272,6 +273,12 @@ export const Received: React.FC<RequestProps> = ({ referenceid, fullname, dateCr
         setEditingId(item.id);
         setForm({ ticket_id: item.ticket_id ?? "", requestor_name: item.requestor_name ?? "", ticket_subject: item.ticket_subject ?? "", department: item.department ?? "", request_type: item.request_type ?? "", type_concern: item.type_concern ?? "", mode: item.mode ?? "", group_services: item.group_services ?? "", technician_name: item.technician_name ?? "", site: item.site ?? "", priority: item.priority ?? "", status: item.status ?? "", date_scheduled: item.date_scheduled ?? "", remarks: item.remarks ?? "", processed_by: item.processed_by ?? "", closed_by: fullname ?? "", date_created: item.date_created ?? "", proof_of_completion: item.proof_of_completion ?? "" });
         setOpen(true);
+    }
+
+    function openChatDialog(item: RequestItem) {
+        setChatTicket({ ticket_id: item.ticket_id, ticket_subject: item.ticket_subject, requestor_name: item.requestor_name });
+        setChatOpen(true);
+        markSeen(item.ticket_id);
     }
 
     function toggleSelect(id: string) {
@@ -396,7 +403,7 @@ export const Received: React.FC<RequestProps> = ({ referenceid, fullname, dateCr
                                 <th className="px-3 py-2" style={{ backgroundColor: "rgba(255,255,255,0.02)" }}>
                                     <input type="checkbox" className="w-3 h-3 accent-[#f97316]" onChange={toggleSelectAll} checked={paginatedActivities.length > 0 && paginatedActivities.every((item) => selectedIds.has(item.id))} aria-label="Select all" />
                                 </th>
-                                {["Edit","Ticket ID","Subject","Priority","Duration","Remaining","Status","Requestor","Dept","Type","Concern","Mode","Group","Technician","Site","Scheduled","Processed By","Closed By","Remarks","Created","Closed"].map((h) => (
+                                {["Actions","Ticket ID","Subject","Priority","Duration","Remaining","Status","Requestor","Dept","Type","Concern","Mode","Group","Technician","Site","Scheduled","Processed By","Closed By","Remarks","Created","Closed"].map((h) => (
                                     <th key={h} className="text-left px-3 py-2 text-[#f97316]/50 uppercase tracking-[0.15em] font-medium" style={{ backgroundColor: "rgba(255,255,255,0.02)" }}>{h}</th>
                                 ))}
                             </tr>
@@ -410,9 +417,26 @@ export const Received: React.FC<RequestProps> = ({ referenceid, fullname, dateCr
                                         <input type="checkbox" className="w-4 h-4 accent-[#f97316]" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} aria-label={`Select ${item.ticket_id}`} />
                                     </td>
                                     <td className="px-3 py-2">
-                                        <button onClick={() => openEditDialog(item)} className="text-[9px] font-mono uppercase tracking-widest px-2 py-1 text-white/40 hover:text-[#f97316] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                                            edit
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={() => openEditDialog(item)} className="text-[9px] font-mono uppercase tracking-widest px-2 py-1 text-white/40 hover:text-[#f97316] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+                                                edit
+                                            </button>
+                                            <button
+                                                onClick={() => openChatDialog(item)}
+                                                className="relative text-[9px] font-mono uppercase tracking-widest px-2 py-1 text-white/40 hover:text-[#06b6d4] transition-colors border-none"
+                                                style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+                                            >
+                                                <MessageSquare className="h-4 w-4" />
+                                                {(unread[item.ticket_id] ?? 0) > 0 && (
+                                                    <span
+                                                        className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center text-[8px] font-mono font-bold text-white px-0.5"
+                                                        style={{ backgroundColor: "#ef4444", border: "1px solid #080c10" }}
+                                                    >
+                                                        {unread[item.ticket_id] > 9 ? "9+" : unread[item.ticket_id]}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </div>
                                     </td>
                                     <td className="px-3 py-2 text-[#f97316]/80">{item.ticket_id || "-"}</td>
                                     <td className="px-3 py-2 text-[#e5e5d0]/70 capitalize max-w-[200px] truncate">{item.ticket_subject || "-"}</td>
@@ -515,6 +539,18 @@ export const Received: React.FC<RequestProps> = ({ referenceid, fullname, dateCr
                 fullname={fullname}
                 existingTicketIds={existingTicketIds}
             />
+
+            {/* Conversation dialog */}
+            {chatTicket && (
+                <TicketConversationDialog
+                    open={chatOpen}
+                    onClose={() => { setChatOpen(false); setChatTicket(null); }}
+                    ticketId={chatTicket.ticket_id}
+                    ticketSubject={chatTicket.ticket_subject}
+                    requestorName={chatTicket.requestor_name}
+                    fullname={fullname}
+                />
+            )}
 
             {/* Confirm delete dialog */}
             <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
