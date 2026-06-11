@@ -60,7 +60,9 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "glass-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl border border-white/10 p-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] duration-200 sm:max-w-lg",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl p-6 duration-200 sm:max-w-lg",
+          "bg-background border border-border shadow-lg", // Light mode
+          "dark:glass-card dark:border-white/10 dark:shadow-[0_0_50px_rgba(0,0,0,0.5)]", // Dark mode
           className
         )}
         {...props}
@@ -69,7 +71,7 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="text-white/50 hover:text-white hover:bg-white/10 absolute top-4 right-4 rounded-lg p-1 opacity-70 transition-all hover:opacity-100 focus:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent absolute top-4 right-4 rounded-lg p-1 opacity-70 transition-all hover:opacity-100 focus:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/10"
           >
             <XIcon />
             <span className="sr-only">Close</span>

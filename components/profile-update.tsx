@@ -11,6 +11,7 @@ import Image from "next/image";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import { type DateRange } from "react-day-picker";
 
 interface UserDetails {
@@ -30,24 +31,23 @@ interface UserDetails {
 // ─── tiny helpers ─────────────────────────────────────────────────────────────
 
 const FL: React.FC<{ children: React.ReactNode; htmlFor?: string }> = ({ children, htmlFor }) => (
-  <label htmlFor={htmlFor} className="block text-[9px] font-mono font-bold uppercase tracking-[0.2em] mb-1" style={{ color: "rgba(249,115,22,0.6)" }}>
+  <label htmlFor={htmlFor} className="block text-[9px] font-mono font-bold uppercase tracking-[0.2em] mb-1 text-orange-500/60">
     {children}
   </label>
 );
 
 const TI: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ className, ...props }) => (
   <input
-    className={`w-full text-[11px] font-mono px-3 py-1.5 focus:outline-none ${className ?? ""}`}
-    style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(229,229,208,0.8)" }}
+    className={`w-full text-[11px] font-mono px-3 py-1.5 focus:outline-none bg-background dark:bg-[#080c10] border border-border dark:border-white/08 text-foreground/80 dark:text-white/80 ${className ?? ""}`}
     {...props}
   />
 );
 
 function SH({ title }: { title: string }) {
   return (
-    <div className="flex items-center gap-2 pb-2 mb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-      <span className="text-[#f97316] font-mono text-xs">▸</span>
-      <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(229,229,208,0.5)" }}>{title}</span>
+    <div className="flex items-center gap-2 pb-2 mb-3 border-b border-border dark:border-white/06">
+      <span className="text-orange-500 font-mono text-xs">▸</span>
+      <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-muted-foreground/50 dark:text-white/50">{title}</span>
     </div>
   );
 }
@@ -176,19 +176,19 @@ export default function ProfileClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 justify-center min-h-screen" style={{ backgroundColor: "#080c10" }}>
-        <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:0ms]" />
-        <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:150ms]" />
-        <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:300ms]" />
-        <span className="text-[10px] font-mono text-white/30 ml-1 uppercase tracking-widest">Loading...</span>
+      <div className="flex items-center gap-2 justify-center min-h-screen bg-background dark:bg-[#080c10]">
+        <span className="w-1 h-1 bg-orange-500 animate-bounce [animation-delay:0ms]" />
+        <span className="w-1 h-1 bg-orange-500 animate-bounce [animation-delay:150ms]" />
+        <span className="w-1 h-1 bg-orange-500 animate-bounce [animation-delay:300ms]" />
+        <span className="text-[10px] font-mono text-muted-foreground/30 dark:text-white/30 ml-1 uppercase tracking-widest">Loading...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: "#080c10" }}>
-        <div className="px-4 py-3 font-mono text-[11px] text-[#ef4444]/80" style={{ border: "1px solid rgba(239,68,68,0.3)" }}>
+      <div className="flex items-center justify-center min-h-screen bg-background dark:bg-[#080c10]">
+        <div className="px-4 py-3 font-mono text-[11px] text-red-500/80 border border-red-500/30">
           ✕ {error}
         </div>
       </div>
@@ -202,17 +202,16 @@ export default function ProfileClient() {
       <FormatProvider>
         <SidebarProvider>
           <SidebarLeft />
-          <SidebarInset style={{ backgroundColor: "#080c10", minHeight: "100%" }}>
+          <SidebarInset className="bg-background dark:bg-[#080c10] min-h-full">
 
             {/* Header */}
-            <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 px-4"
-              style={{ backgroundColor: "rgba(8,12,16,0.95)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-              <SidebarTrigger className="text-white/40 hover:text-white/80 hover:bg-white/5" />
-              <Separator orientation="vertical" className="h-3.5 mx-1" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+            <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 px-4 bg-background/95 dark:bg-[#080c10]/95 border-b border-border dark:border-white/07">
+              <SidebarTrigger className="text-muted-foreground/40 dark:text-white/40 hover:text-muted-foreground/80 dark:hover:text-white/80 hover:bg-muted/50 dark:hover:bg-white/5" />
+              <Separator orientation="vertical" className="h-3.5 mx-1 bg-border dark:bg-white/10" />
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="text-[11px] font-mono text-white/60 uppercase tracking-widest">
+                    <BreadcrumbPage className="text-[11px] font-mono text-muted-foreground/60 dark:text-white/60 uppercase tracking-widest">
                       ▸ Profile
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -227,18 +226,18 @@ export default function ProfileClient() {
 
                   {/* ── Left: avatar ── */}
                   <div className="flex flex-col gap-4">
-                    <div className="border" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
-                      <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                        <span className="w-1.5 h-1.5 bg-[#f97316]" />
-                        <span className="text-[9px] font-mono font-bold text-[#f97316] uppercase tracking-[0.2em]">Avatar</span>
+                    <div className="border border-border dark:border-white/07 bg-muted/20 dark:bg-white/02">
+                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border dark:border-white/06">
+                        <span className="w-1.5 h-1.5 bg-orange-500" />
+                        <span className="text-[9px] font-mono font-bold text-orange-500 uppercase tracking-[0.2em]">Avatar</span>
                       </div>
                       <div className="p-4 flex flex-col items-center gap-4">
                         {/* Photo */}
-                        <div className="relative w-full aspect-square overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <div className="relative w-full aspect-square overflow-hidden border border-border dark:border-white/08">
                           {userDetails.profilePicture ? (
                             <Image src={userDetails.profilePicture} alt="Profile" fill className="object-cover" />
                           ) : (
-                            <div className="flex items-center justify-center h-full text-[10px] font-mono uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.2)" }}>
+                            <div className="flex items-center justify-center h-full text-[10px] font-mono uppercase tracking-widest text-muted-foreground/20 dark:text-white/20">
                               no photo
                             </div>
                           )}
@@ -249,8 +248,7 @@ export default function ProfileClient() {
                           type="button"
                           onClick={() => document.getElementById("profilePicture")?.click()}
                           disabled={uploading}
-                          className="w-full text-[9px] font-mono uppercase tracking-widest px-3 py-2 transition-colors disabled:opacity-40"
-                          style={{ border: "1px solid rgba(249,115,22,0.4)", color: "#f97316" }}
+                          className="w-full text-[9px] font-mono uppercase tracking-widest px-3 py-2 transition-colors disabled:opacity-40 border border-orange-500/40 text-orange-500"
                         >
                           {uploading ? "Uploading..." : "[ Change Photo ]"}
                         </button>
@@ -258,10 +256,10 @@ export default function ProfileClient() {
                     </div>
 
                     {/* Read-only info */}
-                    <div className="border" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
-                      <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                        <span className="w-1.5 h-1.5 bg-[#06b6d4]" />
-                        <span className="text-[9px] font-mono font-bold text-[#06b6d4] uppercase tracking-[0.2em]">Account Info</span>
+                    <div className="border border-border dark:border-white/07 bg-muted/20 dark:bg-white/02">
+                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border dark:border-white/06">
+                        <span className="w-1.5 h-1.5 bg-cyan-500" />
+                        <span className="text-[9px] font-mono font-bold text-cyan-500 uppercase tracking-[0.2em]">Account Info</span>
                       </div>
                       <div className="px-4 py-3 space-y-2">
                         {[
@@ -270,9 +268,9 @@ export default function ProfileClient() {
                           { label: "Status",     value: userDetails.Status },
                         ].map(({ label, value }) => (
                           <div key={label} className="flex items-baseline gap-2 text-[10px] font-mono">
-                            <span style={{ color: "rgba(249,115,22,0.5)" }}>{label}</span>
-                            <span className="flex-1 border-b border-dashed" style={{ borderColor: "rgba(255,255,255,0.05)" }} />
-                            <span style={{ color: "rgba(229,229,208,0.6)" }}>{value || "—"}</span>
+                            <span className="text-orange-500/50">{label}</span>
+                            <span className="flex-1 border-b border-dashed border-border dark:border-white/05" />
+                            <span className="text-muted-foreground/60 dark:text-white/60">{value || "—"}</span>
                           </div>
                         ))}
                       </div>
@@ -283,7 +281,7 @@ export default function ProfileClient() {
                   <div className="md:col-span-2 flex flex-col gap-5">
 
                     {/* Name */}
-                    <div className="border p-5" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                    <div className="border border-border dark:border-white/07 bg-muted/20 dark:bg-white/02 p-5">
                       <SH title="Name" />
                       <div className="grid grid-cols-2 gap-4">
                         <div><FL htmlFor="Firstname">First Name</FL><TI id="Firstname" name="Firstname" value={userDetails.Firstname} onChange={handleChange} autoComplete="given-name" required /></div>
@@ -292,19 +290,19 @@ export default function ProfileClient() {
                     </div>
 
                     {/* Contact */}
-                    <div className="border p-5" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                    <div className="border border-border dark:border-white/07 bg-muted/20 dark:bg-white/02 p-5">
                       <SH title="Contact Details" />
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <FL htmlFor="Email">Email Address</FL>
-                          <TI id="Email" name="Email" type="email" value={userDetails.Email} onChange={handleChange} autoComplete="email" disabled style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.05)", color: "rgba(229,229,208,0.35)", cursor: "not-allowed" }} />
+                          <TI id="Email" name="Email" type="email" value={userDetails.Email} onChange={handleChange} autoComplete="email" disabled className="cursor-not-allowed opacity-60" />
                         </div>
                         <div><FL htmlFor="ContactNumber">Contact Number</FL><TI id="ContactNumber" name="ContactNumber" value={userDetails.ContactNumber} onChange={handleChange} autoComplete="tel" /></div>
                       </div>
                     </div>
 
                     {/* Password */}
-                    <div className="border p-5" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                    <div className="border border-border dark:border-white/07 bg-muted/20 dark:bg-white/02 p-5">
                       <SH title="Password Credentials" />
                       <div className="space-y-4">
                         {/* New password */}
@@ -312,10 +310,10 @@ export default function ProfileClient() {
                           <FL htmlFor="Password">New Password</FL>
                           <div className="flex gap-2">
                             <TI id="Password" name="Password" type={showPassword ? "text" : "password"} value={userDetails.Password || ""} onChange={handleChange} maxLength={10} autoComplete="new-password" className="flex-1" />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "rgba(229,229,208,0.4)" }}>
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors border border-border dark:border-white/07 text-muted-foreground/40 dark:text-white/40">
                               {showPassword ? "hide" : "show"}
                             </button>
-                            <button type="button" onClick={handleGeneratePassword} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors" style={{ border: "1px solid rgba(249,115,22,0.3)", color: "#f97316" }}>
+                            <button type="button" onClick={handleGeneratePassword} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors border border-orange-500/30 text-orange-500">
                               gen
                             </button>
                           </div>
@@ -331,7 +329,7 @@ export default function ProfileClient() {
                           <FL htmlFor="ContactPassword">Confirm Password</FL>
                           <div className="flex gap-2">
                             <TI id="ContactPassword" name="ContactPassword" type={showConfirmPassword ? "text" : "password"} value={userDetails.ContactPassword || ""} onChange={handleChange} maxLength={10} autoComplete="new-password" className="flex-1" />
-                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)", color: "rgba(229,229,208,0.4)" }}>
+                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 shrink-0 transition-colors border border-border dark:border-white/07 text-muted-foreground/40 dark:text-white/40">
                               {showConfirmPassword ? "hide" : "show"}
                             </button>
                           </div>
@@ -344,8 +342,8 @@ export default function ProfileClient() {
                       <button
                         type="submit"
                         disabled={saving || uploading}
-                        className="text-[9px] font-mono uppercase tracking-widest px-6 py-2.5 transition-colors disabled:opacity-40"
-                        style={{ border: "1px solid rgba(249,115,22,0.4)", color: "#f97316", backgroundColor: saving ? "rgba(249,115,22,0.08)" : "transparent" }}
+                        className="text-[9px] font-mono uppercase tracking-widest px-6 py-2.5 transition-colors disabled:opacity-40 border border-orange-500/40 text-orange-500"
+                        style={{ backgroundColor: saving ? "rgba(249,115,22,0.08)" : "transparent" }}
                       >
                         {saving ? "Saving..." : uploading ? "Uploading..." : "[ Save Changes ]"}
                       </button>

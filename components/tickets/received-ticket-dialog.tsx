@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,31 +59,32 @@ function toISOFromLocal(local: string): string {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const FL: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <label className="mb-1 text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(249,115,22,0.6)" }}>
+    <label className="mb-1 text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-orange-500/60 dark:text-orange-500/60">
         {children}
     </label>
 );
 
 const SH: React.FC<{ title: string }> = ({ title }) => (
-    <div className="flex items-center gap-2 pt-5 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <span className="text-[#f97316] font-mono text-xs">▸</span>
-        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(229,229,208,0.5)" }}>{title}</span>
+    <div className="flex items-center gap-2 pt-5 pb-2 border-b border-border dark:border-white/10">
+        <span className="text-orange-500 font-mono text-xs">▸</span>
+        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-muted-foreground/50 dark:text-[#e5e5d0]/50">{title}</span>
     </div>
 );
 
 const TI: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { inputRef?: React.Ref<HTMLInputElement> }> = ({ className, inputRef, ...props }) => (
     <input
         ref={inputRef}
-        className={`w-full text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none ${className ?? ""}`}
-        style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }}
+        className={cn(
+            "w-full text-foreground/80 dark:text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none bg-background dark:bg-[#080c10] border border-border dark:border-white/10",
+            className
+        )}
         {...props}
     />
 );
 
 const TS = (name: string, placeholder: string, options: string[], value: string, onChange: (v: string) => void) => (
     <select
-        className="w-full text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none"
-        style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }}
+        className="w-full text-foreground/80 dark:text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none bg-background dark:bg-[#080c10] border border-border dark:border-white/10"
         value={value}
         onChange={(e) => onChange(e.target.value)}
     >
@@ -188,31 +190,29 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
     return (
         <>
             {/* Full-page overlay */}
-            <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: "#080c10" }}>
+            <div className="fixed inset-0 z-50 flex flex-col bg-background dark:bg-[#080c10]">
 
                 {/* Top bar */}
-                <div className="flex items-center justify-between px-6 py-3 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                <div className="flex items-center justify-between px-6 py-3 shrink-0 border-b border-border dark:border-white/10 bg-muted/50 dark:bg-white/5">
                     <div className="flex items-center gap-3">
-                        <span className="text-[#f97316] font-mono text-xs">▸</span>
-                        <span className="text-[11px] font-mono font-bold text-[#f97316] uppercase tracking-[0.2em]">
+                        <span className="text-orange-500 font-mono text-xs">▸</span>
+                        <span className="text-[11px] font-mono font-bold text-orange-500 uppercase tracking-[0.2em]">
                             {editingId ? "Edit Ticket" : "New Ticket"}
                         </span>
                         {editingId && (
-                            <span className="text-[9px] font-mono text-white/25 ml-1">· {editingId}</span>
+                            <span className="text-[9px] font-mono text-muted-foreground/30 dark:text-white/25 ml-1">· {editingId}</span>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleAttemptClose}
-                            className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-white/40 hover:text-[#f97316] transition-colors"
-                            style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+                            className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-muted-foreground/50 hover:text-orange-500 transition-colors border border-border dark:border-white/10"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={editingId ? handleUpdate : handleSubmit}
-                            className="text-[9px] font-mono uppercase tracking-widest px-4 py-1.5 text-[#f97316] hover:bg-[#f97316]/10 transition-colors"
-                            style={{ border: "1px solid rgba(249,115,22,0.4)" }}
+                            className="text-[9px] font-mono uppercase tracking-widest px-4 py-1.5 text-orange-500 hover:bg-orange-500/10 transition-colors border border-orange-500/40"
                         >
                             {editingId ? "[ Update Ticket ]" : "[ Create Ticket ]"}
                         </button>
@@ -220,7 +220,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                 </div>
 
                 {/* Meta strip */}
-                <div className="px-6 py-3 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", backgroundColor: "rgba(255,255,255,0.01)" }}>
+                <div className="px-6 py-3 shrink-0 border-b border-border dark:border-white/10 bg-muted/30 dark:bg-white/5">
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
                         {[
                             { label: "Ticket ID", name: "ticket_id" },
@@ -241,15 +241,15 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-0 h-full">
 
                         {/* Left column */}
-                        <div className="px-6 py-4 space-y-3" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div className="px-6 py-4 space-y-3 border-r border-border dark:border-white/10">
 
                             <SH title="Requestor" />
                             <div className="flex flex-col gap-1">
                                 <FL>Requestor Name</FL>
                                 {loadingUsers ? (
-                                    <p className="text-[10px] font-mono text-white/30">Loading users…</p>
+                                    <p className="text-[10px] font-mono text-muted-foreground/30 dark:text-white/30">Loading users…</p>
                                 ) : errorUsers ? (
-                                    <p className="text-[10px] font-mono text-[#ef4444]/70">{errorUsers}</p>
+                                    <p className="text-[10px] font-mono text-destructive/70">{errorUsers}</p>
                                 ) : (
                                     <div className="relative">
                                         <TI
@@ -262,28 +262,25 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                         />
                                         {searchQuery && (
                                             <button type="button" onClick={() => { setSearchQuery(""); handleSelectChange("requestor_name", ""); setIsDropdownOpen(false); }}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-[#f97316] text-xs font-mono">✕</button>
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/30 dark:text-white/30 hover:text-orange-500 text-xs font-mono">✕</button>
                                         )}
                                         {isDropdownOpen && filteredUsers.length > 0 && (
-                                            <div ref={dropdownRef} className="absolute z-50 w-full mt-0 max-h-48 overflow-auto" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#080c10" }}>
+                                            <div ref={dropdownRef} className="absolute z-50 w-full mt-0 max-h-48 overflow-auto border border-border dark:border-white/10 bg-background dark:bg-[#080c10]">
                                                 {filteredUsers.map((user) => {
                                                     const displayName = `${user.Lastname}, ${user.Firstname}`;
                                                     return (
                                                         <div key={user.ReferenceID}
-                                                            className="px-3 py-2 text-[11px] font-mono cursor-pointer flex items-center justify-between transition-colors"
-                                                            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-                                                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.04)")}
-                                                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                                                            className="px-3 py-2 text-[11px] font-mono cursor-pointer flex items-center justify-between transition-colors border-b border-border dark:border-white/05 hover:bg-accent dark:hover:bg-white/5"
                                                             onMouseDown={(e) => { e.preventDefault(); handleSelectChange("requestor_name", displayName); setSearchQuery(displayName); setIsDropdownOpen(false); }}>
-                                                            <span className="text-[#e5e5d0]/80">{displayName}</span>
-                                                            <span className="text-white/25 text-[9px]">#{user.ReferenceID}</span>
+                                                            <span className="text-foreground/80 dark:text-[#e5e5d0]/80">{displayName}</span>
+                                                            <span className="text-muted-foreground/30 dark:text-white/25 text-[9px]">#{user.ReferenceID}</span>
                                                         </div>
                                                     );
                                                 })}
                                             </div>
                                         )}
                                         {isDropdownOpen && searchQuery && filteredUsers.length === 0 && (
-                                            <div className="absolute z-50 w-full mt-0 px-3 py-2 text-[10px] font-mono text-white/30" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#080c10" }}>
+                                            <div className="absolute z-50 w-full mt-0 px-3 py-2 text-[10px] font-mono text-muted-foreground/30 dark:text-white/30 border border-border dark:border-white/10 bg-background dark:bg-[#080c10]">
                                                 No users found for "{searchQuery}"
                                             </div>
                                         )}
@@ -313,7 +310,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="flex flex-col gap-1 col-span-2">
                                     <FL>Priority</FL>
-                                    <select className="w-full text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none" style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }} value={form.priority || ""} onChange={(e) => handleSelectChange("priority", e.target.value)}>
+                                    <select className="w-full text-foreground/80 dark:text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-1.5 focus:outline-none bg-background dark:bg-[#080c10] border border-border dark:border-white/10" value={form.priority || ""} onChange={(e) => handleSelectChange("priority", e.target.value)}>
                                         <option value="">Select priority…</option>
                                         {[{v:"Critical",l:"P-1 · Critical",s:"4h SLA"},{v:"High",l:"P-2 · High",s:"8h SLA"},{v:"Medium",l:"P-3 · Medium",s:"2d SLA"},{v:"Low",l:"P-4 · Low",s:"4d SLA"}].map((p) => (
                                             <option key={p.v} value={p.v}>{p.l} ({p.s})</option>
@@ -331,8 +328,7 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                 <FL>Actions / Remarks</FL>
                                 <textarea name="remarks" value={form.remarks || ""} onChange={(e) => handleSelectChange("remarks", e.target.value)} rows={5}
                                     placeholder="> describe actions taken or notes…"
-                                    className="w-full text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-2 resize-none focus:outline-none placeholder:text-white/20"
-                                    style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }} />
+                                    className="w-full text-foreground/80 dark:text-[#e5e5d0]/80 text-[11px] font-mono px-3 py-2 resize-none focus:outline-none placeholder:text-muted-foreground/20 dark:placeholder:text-white/20 bg-background dark:bg-[#080c10] border border-border dark:border-white/10" />
                             </div>
                             {isScheduled && (
                                 <div className="flex flex-col gap-1"><FL>Date Scheduled</FL><TI type="date" name="date_scheduled" value={form.date_scheduled || ""} onChange={handleInputChange} /></div>
@@ -355,21 +351,20 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
                                 }}>
                                     <FL>Proof of Completion</FL>
                                     {form.proof_of_completion && (
-                                        <div className="flex items-center gap-2 mb-2 px-3 py-2" style={{ border: "1px solid rgba(34,197,94,0.25)", backgroundColor: "rgba(34,197,94,0.04)" }}>
-                                            <span className="text-[10px] font-mono text-[#22c55e]/70">✓ proof uploaded</span>
-                                            <a href={form.proof_of_completion} target="_blank" rel="noopener noreferrer" className="text-[10px] font-mono text-[#f97316]/70 hover:text-[#f97316] underline ml-1">view</a>
-                                            <button type="button" onClick={() => handleSelectChange("proof_of_completion", "")} className="ml-auto text-[10px] font-mono text-[#ef4444]/60 hover:text-[#ef4444]">remove</button>
+                                        <div className="flex items-center gap-2 mb-2 px-3 py-2 border border-green-500/25 bg-green-500/5 dark:border-green-500/25 dark:bg-green-500/5">
+                                            <span className="text-[10px] font-mono text-green-500/70">✓ proof uploaded</span>
+                                            <a href={form.proof_of_completion} target="_blank" rel="noopener noreferrer" className="text-[10px] font-mono text-orange-500/70 hover:text-orange-500 underline ml-1">view</a>
+                                            <button type="button" onClick={() => handleSelectChange("proof_of_completion", "")} className="ml-auto text-[10px] font-mono text-destructive/60 hover:text-destructive">remove</button>
                                         </div>
                                     )}
                                     <input type="file" accept="image/*"
-                                        className="text-[10px] font-mono text-white/40 file:text-[#f97316]/70 file:text-[9px] file:font-mono file:uppercase file:tracking-widest file:px-2 file:py-1 file:mr-2 file:cursor-pointer"
-                                        style={{ "--file-bg": "#080c10" } as React.CSSProperties}
+                                        className="text-[10px] font-mono text-muted-foreground/40 dark:text-white/40 file:text-orange-500/70 file:text-[9px] file:font-mono file:uppercase file:tracking-widest file:px-2 file:py-1 file:mr-2 file:cursor-pointer"
                                         onChange={async (e) => {
                                             const file = e.target.files?.[0];
                                             if (!file) return;
                                             try { const url = await handleImageUpload(file); handleSelectChange("proof_of_completion", url); } catch (err) { console.error(err); } finally { e.target.value = ""; }
                                         }} />
-                                    <p className="text-[9px] font-mono text-white/20 mt-1">You can also paste an image from clipboard.</p>
+                                    <p className="text-[9px] font-mono text-muted-foreground/20 dark:text-white/20 mt-1">You can also paste an image from clipboard.</p>
                                 </div>
                             )}
                         </div>
@@ -379,14 +374,14 @@ export const ReceivedDialog: React.FC<TicketDialogProps> = ({
 
             {/* Confirm discard dialog */}
             <Dialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
-                <DialogContent className="sm:max-w-[360px] rounded-none p-0" style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.1)", zIndex: 60 }}>
-                    <DialogHeader className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                        <DialogTitle className="text-[11px] font-mono font-bold text-[#eab308] uppercase tracking-[0.2em]">⚠ Discard changes?</DialogTitle>
-                        <DialogDescription className="text-[10px] font-mono text-white/30 mt-1">You have unsaved changes. Closing will reset the form.</DialogDescription>
+                <DialogContent className="sm:max-w-[360px] rounded-none p-0 border border-border dark:border-white/10 z-[60] bg-background dark:bg-[#080c10]" showCloseButton={false}>
+                    <DialogHeader className="px-5 py-4 border-b border-border dark:border-white/10">
+                        <DialogTitle className="text-[11px] font-mono font-bold text-yellow-500 uppercase tracking-[0.2em]">⚠ Discard changes?</DialogTitle>
+                        <DialogDescription className="text-[10px] font-mono text-muted-foreground/30 dark:text-white/30 mt-1">You have unsaved changes. Closing will reset the form.</DialogDescription>
                     </DialogHeader>
                     <div className="flex justify-end gap-2 px-5 py-4">
-                        <button onClick={() => setShowConfirmClose(false)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-white/40 hover:text-[#f97316] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>Keep editing</button>
-                        <button onClick={confirmClose} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors" style={{ border: "1px solid rgba(239,68,68,0.4)" }}>Discard</button>
+                        <button onClick={() => setShowConfirmClose(false)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-muted-foreground/50 hover:text-orange-500 transition-colors border border-border dark:border-white/10">Keep editing</button>
+                        <button onClick={confirmClose} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-destructive hover:bg-destructive/10 transition-colors border border-destructive/40">Discard</button>
                     </div>
                 </DialogContent>
             </Dialog>

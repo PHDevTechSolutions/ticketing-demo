@@ -48,21 +48,21 @@ function KVRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline gap-2 text-[11px] font-mono">
       <span className="text-[#f97316]/60 shrink-0">{label}</span>
-      <span className="flex-1 border-b border-dashed border-[#2a2a1a]" />
-      <span className="text-[#e5e5d0]/70 shrink-0">{value}</span>
+      <span className="flex-1 border-b border-dashed border-gray-300 dark:border-[#2a2a1a]" />
+      <span className="text-gray-700 dark:text-[#e5e5d0]/70 shrink-0">{value}</span>
     </div>
   );
 }
 
 function PanelHeader({ dot, title, sub, right }: { dot?: string; title: string; sub?: string; right?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-4 py-2.5 border-b border-[rgba(255,255,255,0.06)]">
+    <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
       <div className="flex items-center gap-2">
         {dot && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dot }} />}
-        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: dot || "#e5e5d0" }}>
+        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: dot || "#374151" }}>
           {title}
         </span>
-        {sub && <span className="text-[9px] font-mono text-[#6b6b4a]/50 ml-1">{sub}</span>}
+        {sub && <span className="text-[9px] font-mono text-gray-500 dark:text-[#6b6b4a]/50 ml-1">{sub}</span>}
       </div>
       {right}
     </div>
@@ -171,11 +171,38 @@ function DashboardContent() {
     filteredActivities.filter((i) => i.priority?.toLowerCase() === "critical" && i.status.toLowerCase() !== "resolved"),
     [filteredActivities]);
 
-  const normalizeKey = (s?: string) =>
-    s ? s.trim().toLowerCase().replace(/\s+/g, " ").replace(/\s*,\s*/g, ", ").replace(/^,|,$/g, "") || "unassigned" : "unassigned";
+  const normalizeKey = (s?: string) => {
+    if (!s) return "unassigned";
+    const clean = s.trim().toLowerCase().replace(/\s+/g, " ").replace(/\s*,\s*/g, ",").replace(/^,|,$/g, "");
+    if (!clean) return "unassigned";
+    
+    // Handle names with comma (Last, First) and without (First Last)
+    if (clean.includes(",")) {
+      const [last, first] = clean.split(",", 2).map(part => part.trim());
+      return `${last}, ${first}`;
+    } else {
+      const parts = clean.split(" ");
+      if (parts.length >= 2) {
+        const last = parts[parts.length - 1];
+        const first = parts.slice(0, -1).join(" ");
+        return `${last}, ${first}`;
+      }
+      return clean;
+    }
+  };
 
-  const formatName = (k: string) =>
-    k === "unassigned" ? "Unassigned" : k.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+  const formatName = (k: string) => {
+    if (k === "unassigned") return "Unassigned";
+    // If it's already in "Last, First" format, just capitalize each part
+    if (k.includes(",")) {
+      const parts = k.split(",").map(part => part.trim());
+      return parts.map(part => 
+        part.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ")
+      ).join(", ");
+    }
+    // Otherwise, capitalize each word
+    return k.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+  };
 
   const groupedByProcessor = React.useMemo(() => {
     const g: Record<string, RequestItem[]> = {};
@@ -205,29 +232,30 @@ function DashboardContent() {
 
   const countsByRequestor = React.useMemo(() => {
     const c: Record<string, number> = {};
-    for (const item of filteredActivities) { const k = item.closed_by?.trim() || "Unknown"; c[k] = (c[k] || 0) + 1; }
-    return Object.entries(c).sort(([, a], [, b]) => b - a);
+    for (const item of filteredActivities) {
+      const k = normalizeKey(item.closed_by);
+      c[k] = (c[k] || 0) + 1;
+    }
+    return Object.entries(c)
+      .sort(([, a], [, b]) => b - a)
+      .map(([k, v]) => [formatName(k), v] as [string, number]);
   }, [filteredActivities]);
-
-  const PANEL_BG = "rgba(255,255,255,0.02)";
-  const PANEL_BORDER = "rgba(255,255,255,0.07)";
 
   // ─── render ────────────────────────────────────────────────────────────────
 
   return (
     <>
       <SidebarLeft />
-      <SidebarInset style={{ backgroundColor: "#080c10", minHeight: "100%" }}>
+      <SidebarInset className="bg-white dark:bg-[#080c10] min-h-full">
 
         {/* Header */}
-        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 px-4"
-          style={{ backgroundColor: "rgba(8,12,16,0.95)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <SidebarTrigger className="text-white/40 hover:text-white/80 hover:bg-white/5" />
-          <Separator orientation="vertical" className="h-3.5 mx-1" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 px-4 bg-white dark:bg-[rgba(8,12,16,0.95)] border-b border-gray-200 dark:border-[rgba(255,255,255,0.07)]">
+          <SidebarTrigger className="text-gray-600 dark:text-white/40 hover:text-gray-800 dark:hover:text-white/80 hover:bg-gray-100 dark:hover:bg-white/5" />
+          <Separator orientation="vertical" className="h-3.5 mx-1 bg-gray-300 dark:bg-[rgba(255,255,255,0.1)]" />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-[11px] font-mono text-white/60 uppercase tracking-widest">
+                <BreadcrumbPage className="text-[11px] font-mono text-gray-700 dark:text-white/60 uppercase tracking-widest">
                   Dashboard
                 </BreadcrumbPage>
               </BreadcrumbItem>
@@ -246,12 +274,12 @@ function DashboardContent() {
               <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:0ms]" />
               <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:150ms]" />
               <span className="w-1 h-1 bg-[#f97316] animate-bounce [animation-delay:300ms]" />
-              <span className="text-[10px] font-mono text-white/30 ml-1 uppercase tracking-widest">Loading...</span>
+              <span className="text-[10px] font-mono text-gray-500 dark:text-white/30 ml-1 uppercase tracking-widest">Loading...</span>
             </div>
           ) : errorUser ? (
-            <div className="border px-4 py-3 flex items-start gap-2" style={{ borderColor: "rgba(239,68,68,0.3)", backgroundColor: "rgba(239,68,68,0.05)" }}>
-              <span className="text-[#ef4444] font-mono text-xs mt-0.5">✕</span>
-              <p className="text-[11px] font-mono text-[#ef4444]/80">{errorUser}</p>
+            <div className="border border-red-200 dark:border-[rgba(239,68,68,0.3)] bg-red-50 dark:bg-[rgba(239,68,68,0.05)] px-4 py-3 flex items-start gap-2">
+              <span className="text-red-500 font-mono text-xs mt-0.5">✕</span>
+              <p className="text-[11px] font-mono text-red-600 dark:text-[#ef4444]/80">{errorUser}</p>
             </div>
           ) : (
             <>
@@ -261,17 +289,17 @@ function DashboardContent() {
                   <span className="w-1 h-1 bg-[#06b6d4] animate-bounce [animation-delay:0ms]" />
                   <span className="w-1 h-1 bg-[#06b6d4] animate-bounce [animation-delay:150ms]" />
                   <span className="w-1 h-1 bg-[#06b6d4] animate-bounce [animation-delay:300ms]" />
-                  <span className="text-[10px] font-mono text-white/30 ml-1 uppercase tracking-widest">Fetching tickets...</span>
+                  <span className="text-[10px] font-mono text-gray-500 dark:text-white/30 ml-1 uppercase tracking-widest">Fetching tickets...</span>
                 </div>
               )}
 
               {/* Alerts */}
               {advisoryTickets.length > 0 && (
-                <div className="border" style={{ borderColor: "rgba(249,115,22,0.3)", backgroundColor: "rgba(249,115,22,0.04)" }}>
+                <div className="border border-orange-200 dark:border-[rgba(249,115,22,0.3)] bg-orange-50 dark:bg-[rgba(249,115,22,0.04)]">
                   <PanelHeader dot="#f97316" title="Advisory Notice" />
                   <div className="p-4 space-y-3">
                     {advisoryTickets.map((item) => (
-                      <div key={item.id} className="px-4 py-3 space-y-1.5 border" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                      <div key={item.id} className="px-4 py-3 space-y-1.5 border border-gray-200 dark:border-[rgba(255,255,255,0.07)] bg-white dark:bg-[rgba(255,255,255,0.02)]">
                         <KVRow label="ticket_id" value={item.ticket_id} />
                         <KVRow label="subject" value={item.ticket_subject} />
                         <KVRow label="concern" value={item.type_concern} />
@@ -285,11 +313,11 @@ function DashboardContent() {
               )}
 
               {criticalTickets.length > 0 && (
-                <div className="border" style={{ borderColor: "rgba(239,68,68,0.3)", backgroundColor: "rgba(239,68,68,0.04)" }}>
+                <div className="border border-red-200 dark:border-[rgba(239,68,68,0.3)] bg-red-50 dark:bg-[rgba(239,68,68,0.04)]">
                   <PanelHeader dot="#ef4444" title="Critical Priority Alert" />
                   <div className="p-4 space-y-3">
                     {criticalTickets.map((item) => (
-                      <div key={item.id} className="px-4 py-3 space-y-1.5 border" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                      <div key={item.id} className="px-4 py-3 space-y-1.5 border border-gray-200 dark:border-[rgba(255,255,255,0.07)] bg-white dark:bg-[rgba(255,255,255,0.02)]">
                         <KVRow label="ticket_id" value={item.ticket_id} />
                         <KVRow label="subject" value={item.ticket_subject} />
                         <KVRow label="concern" value={item.type_concern} />
@@ -303,28 +331,26 @@ function DashboardContent() {
               )}
 
               {/* ── TOTAL TICKETS banner ── */}
-              <div className="border p-5 flex items-end justify-between" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+              <div className="border border-gray-200 dark:border-[rgba(255,255,255,0.07)] bg-white dark:bg-[rgba(255,255,255,0.02)] p-5 flex items-end justify-between">
                 <div>
-                  <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/40 mb-1">Total Tickets</p>
-                  <p className="text-5xl font-mono font-bold text-white leading-none">{grandTotal}</p>
-                  <p className="text-[10px] font-mono text-white/30 mt-1.5">All tickets regardless of status.</p>
+                  <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 dark:text-white/40 mb-1">Total Tickets</p>
+                  <p className="text-5xl font-mono font-bold text-gray-900 dark:text-white leading-none">{grandTotal}</p>
+                  <p className="text-[10px] font-mono text-gray-500 dark:text-white/30 mt-1.5">All tickets regardless of status.</p>
                 </div>
-                <a href="#" className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 border text-[#06b6d4] hover:bg-[#06b6d4]/10 transition-colors"
-                  style={{ borderColor: "rgba(6,182,212,0.3)" }}>
+                <a href="#" className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 border border-cyan-200 dark:border-[rgba(6,182,212,0.3)] text-[#06b6d4] hover:bg-cyan-50 dark:hover:bg-[#06b6d4]/10 transition-colors">
                   VIEW ALL →
                 </a>
               </div>
 
               {/* ── STATUS CARDS ── */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border" style={{ borderColor: PANEL_BORDER }}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border border-gray-200 dark:border-[rgba(255,255,255,0.07)]">
                 {Object.entries(STATUS_META).map(([key, meta], idx) => {
                   const total = counts[key as keyof typeof counts] ?? 0;
                   const isLast = idx === Object.entries(STATUS_META).length - 1;
                   return (
                     <div
                       key={key}
-                      className={`p-5 flex flex-col gap-3 ${!isLast ? "border-r" : ""}`}
-                      style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}
+                      className={`p-5 flex flex-col gap-3 bg-white dark:bg-[rgba(255,255,255,0.02)] ${!isLast ? "border-r border-gray-200 dark:border-[rgba(255,255,255,0.07)]" : ""}`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.dot }} />
@@ -335,7 +361,7 @@ function DashboardContent() {
                       <p className="text-4xl font-mono font-bold leading-none" style={{ color: meta.color }}>
                         {total}
                       </p>
-                      <p className="text-[9px] font-mono text-white/30 leading-relaxed">{meta.desc}</p>
+                      <p className="text-[9px] font-mono text-gray-500 dark:text-white/30 leading-relaxed">{meta.desc}</p>
                       <a href="#" className="text-[9px] font-mono uppercase tracking-widest mt-auto" style={{ color: meta.color }}>
                         VIEW →
                       </a>
@@ -348,55 +374,57 @@ function DashboardContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
                 {/* Processed By — horizontal bar */}
-                <div className="border flex flex-col" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                <div className="border border-gray-200 dark:border-[rgba(255,255,255,0.07)] bg-white dark:bg-[rgba(255,255,255,0.02)] flex flex-col">
                   <PanelHeader dot="#06b6d4" title="Tickets per Processed By" sub="Based on processor counts" />
                   <div className="p-4 flex-1">
                     <ChartContainer config={chartConfig} style={{ height: "300px", width: "100%" }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={barChartData} layout="vertical" margin={{ right: 32, left: 8 }}>
-                          <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.04)" />
+                          <CartesianGrid horizontal={false} stroke="rgba(0,0,0,0.05)" className="dark:stroke-[rgba(255,255,255,0.04)]" />
                           <YAxis dataKey="processor" type="category" tickLine={false} axisLine={false} width={140}
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10, fontFamily: "monospace" }} />
+                            tick={{ fill: "#4b5563", fontSize: 10, fontFamily: "monospace", className: "dark:fill-[rgba(255,255,255,0.4)]" }} />
                           <XAxis type="number" tickLine={false} axisLine={false}
-                            tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9, fontFamily: "monospace" }} />
+                            tick={{ fill: "#9ca3af", fontSize: 9, fontFamily: "monospace", className: "dark:fill-[rgba(255,255,255,0.2)]" }} />
                           <ChartTooltip content={<ChartTooltipContent nameKey="total" hideLabel />} />
                           <Bar dataKey="total" fill="#06b6d4" radius={0}>
                             <LabelList dataKey="total" position="right"
-                              style={{ fill: "rgba(6,182,212,0.8)", fontSize: 10, fontFamily: "monospace" }} />
+                              style={{ fill: "currentColor", fontSize: 10, fontFamily: "monospace" }}
+                              className="fill-[#0891b2] dark:fill-[rgba(6,182,212,0.8)]" />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </ChartContainer>
-                    <p className="text-[9px] font-mono text-white/25 mt-3">
+                    <p className="text-[9px] font-mono text-gray-400 dark:text-white/25 mt-3">
                       {sortedGrouped.length} processors · {grandTotal} total
                     </p>
                   </div>
                 </div>
 
                 {/* Department — vertical bar */}
-                <div className="border flex flex-col" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+                <div className="border border-gray-200 dark:border-[rgba(255,255,255,0.07)] bg-white dark:bg-[rgba(255,255,255,0.02)] flex flex-col">
                   <PanelHeader dot="#8b5cf6" title="Tickets per Department" sub="Based on department counts" />
                   <div className="p-4 flex-1">
                     <ChartContainer config={{}} style={{ height: "300px", width: "100%" }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={countsByDepartment.map(([k, v]) => ({ dept: k, total: v }))} margin={{ top: 16, right: 8, left: 0, bottom: 60 }}>
-                          <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
+                          <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.05)" className="dark:stroke-[rgba(255,255,255,0.04)]" />
                           <XAxis dataKey="dept" tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0}
-                            tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 9, fontFamily: "monospace" }} />
+                            tick={{ fill: "#6b7280", fontSize: 9, fontFamily: "monospace", className: "dark:fill-[rgba(255,255,255,0.35)]" }} />
                           <YAxis tickLine={false} axisLine={false}
-                            tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9, fontFamily: "monospace" }} />
+                            tick={{ fill: "#9ca3af", fontSize: 9, fontFamily: "monospace", className: "dark:fill-[rgba(255,255,255,0.2)]" }} />
                           <ChartTooltip content={<ChartTooltipContent nameKey="total" hideLabel />} />
                           <Bar dataKey="total" radius={0}>
                             {countsByDepartment.map(([k], i) => (
                               <Cell key={k} fill="#8b5cf6" fillOpacity={0.7 + (i % 3) * 0.1} />
                             ))}
                             <LabelList dataKey="total" position="top"
-                              style={{ fill: "rgba(139,92,246,0.8)", fontSize: 9, fontFamily: "monospace" }} />
+                              style={{ fill: "currentColor", fontSize: 9, fontFamily: "monospace" }}
+                              className="fill-[#7c3aed] dark:fill-[rgba(139,92,246,0.8)]" />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </ChartContainer>
-                    <p className="text-[9px] font-mono text-white/25 mt-3">
+                    <p className="text-[9px] font-mono text-gray-400 dark:text-white/25 mt-3">
                       {countsByDepartment.length} departments · {grandTotal} total
                     </p>
                   </div>
@@ -404,13 +432,13 @@ function DashboardContent() {
               </div>
 
               {/* ── LOCATION / CLOSED BY grid ── */}
-              <div className="border" style={{ borderColor: PANEL_BORDER, backgroundColor: PANEL_BG }}>
+              <div className="border border-gray-200 dark:border-[rgba(255,255,255,0.07)] bg-white dark:bg-[rgba(255,255,255,0.02)]">
                 <PanelHeader
                   dot="#f97316"
                   title="Closed By Distribution"
                   sub="Grouped by closing agent"
                   right={
-                    <span className="text-[9px] font-mono px-2 py-0.5 border" style={{ borderColor: "rgba(249,115,22,0.3)", color: "#f97316" }}>
+                    <span className="text-[9px] font-mono px-2 py-0.5 border border-orange-200 dark:border-[rgba(249,115,22,0.3)] text-[#f97316]">
                       {countsByRequestor.length} AGENTS
                     </span>
                   }
@@ -421,12 +449,10 @@ function DashboardContent() {
                     return (
                       <div
                         key={name}
-                        className="flex items-center justify-between px-4 py-3 border-b border-r"
-                        style={{ borderColor: PANEL_BORDER }}
+                        className="flex items-center justify-between px-4 py-3 border-b border-r border-gray-200 dark:border-[rgba(255,255,255,0.07)]"
                       >
-                        <span className="text-[10px] font-mono text-white/60 uppercase truncate max-w-[120px]">{name}</span>
-                        <span className="text-[11px] font-mono font-bold px-2 py-0.5 border ml-2 shrink-0"
-                          style={{ color: "#f97316", borderColor: "rgba(249,115,22,0.3)", backgroundColor: "rgba(249,115,22,0.08)" }}>
+                        <span className="text-[10px] font-mono text-gray-600 dark:text-white/60 uppercase truncate max-w-[120px]">{name}</span>
+                        <span className="text-[11px] font-mono font-bold px-2 py-0.5 border border-orange-200 dark:border-[rgba(249,115,22,0.3)] bg-orange-50 dark:bg-[rgba(249,115,22,0.08)] text-[#f97316] ml-2 shrink-0">
                           {count}
                         </span>
                       </div>
@@ -455,8 +481,8 @@ export default function Page() {
       <FormatProvider>
         <SidebarProvider>
           <Suspense fallback={
-            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: "#080c10" }}>
-              <span className="text-[10px] font-mono text-white/20 uppercase tracking-widest">Initializing...</span>
+            <div className="flex items-center justify-center min-h-screen bg-white dark:bg-[#080c10]">
+              <span className="text-[10px] font-mono text-gray-400 dark:text-white/20 uppercase tracking-widest">Initializing...</span>
             </div>
           }>
             <DashboardContent />

@@ -57,11 +57,11 @@ function formatDate(dateStr?: string) {
 
 function getPriorityStyle(priority?: string): string {
     switch (priority) {
-        case "Critical": return "text-[#ef4444] border-[#ef4444]/30";
-        case "High":     return "text-[#f97316] border-[#f97316]/30";
-        case "Medium":   return "text-[#eab308] border-[#eab308]/30";
-        case "Low":      return "text-[#22c55e] border-[#22c55e]/30";
-        default:         return "text-white/40 border-white/10";
+        case "Critical": return "text-red-500 border-red-500/30";
+        case "High":     return "text-orange-500 border-orange-500/30";
+        case "Medium":   return "text-yellow-500 border-yellow-500/30";
+        case "Low":      return "text-green-500 border-green-500/30";
+        default:         return "text-muted-foreground/40 border-muted/10";
     }
 }
 
@@ -234,17 +234,17 @@ export function Reminders() {
         <>
             {/* ── Meeting reminder toast ── */}
             {showMeetingReminder && currentMeeting && (
-                <div className="fixed top-4 right-16 z-50 max-w-xs font-mono" style={{ backgroundColor: "#080c10", border: "1px solid rgba(249,115,22,0.4)" }}>
-                    <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(249,115,22,0.2)" }}>
-                        <span className="w-1.5 h-1.5 bg-[#f97316]" />
-                        <span className="text-[9px] font-mono font-bold text-[#f97316] uppercase tracking-[0.2em]">Meeting Reminder</span>
+                <div className="fixed top-4 right-16 z-50 max-w-xs font-mono bg-background border border-orange-500/40 dark:bg-[#080c10] dark:border-orange-500/40">
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-orange-500/20 dark:border-orange-500/20">
+                        <span className="w-1.5 h-1.5 bg-orange-500" />
+                        <span className="text-[9px] font-mono font-bold text-orange-500 uppercase tracking-[0.2em]">Meeting Reminder</span>
                     </div>
                     <div className="px-4 py-3 space-y-1">
-                        <p className="text-[11px] text-white/80">{currentMeeting.title}</p>
-                        <p className="text-[10px] text-white/40">{formatTime(toDate(currentMeeting.start_date))}</p>
+                        <p className="text-[11px] text-foreground/80 dark:text-white/80">{currentMeeting.title}</p>
+                        <p className="text-[10px] text-muted-foreground/40 dark:text-white/40">{formatTime(toDate(currentMeeting.start_date))}</p>
                     </div>
-                    <div className="px-4 py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                        <button onClick={dismissMeeting} className="text-[9px] font-mono uppercase tracking-widest text-white/40 hover:text-[#f97316] transition-colors">
+                    <div className="px-4 py-2.5 border-t border-border dark:border-white/06">
+                        <button onClick={dismissMeeting} className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 hover:text-orange-500 transition-colors dark:text-white/40 dark:hover:text-orange-500">
                             [ Dismiss ]
                         </button>
                     </div>
@@ -253,13 +253,13 @@ export function Reminders() {
 
             {/* ── Logout reminder dialog ── */}
             <Dialog open={showLogoutReminder} onOpenChange={setShowLogoutReminder}>
-                <DialogContent className="max-w-sm rounded-none p-0" style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <DialogHeader className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                        <DialogTitle className="text-[11px] font-mono font-bold text-[#eab308] uppercase tracking-[0.2em]">⚠ Logout Reminder</DialogTitle>
-                        <DialogDescription className="text-[10px] font-mono text-white/30 mt-1">Don't forget to logout the stash.</DialogDescription>
+                <DialogContent className="max-w-sm rounded-none p-0 font-mono bg-background dark:bg-[#080c10] border-border dark:border-white/10">
+                    <DialogHeader className="px-5 py-4 border-b border-border dark:border-white/07">
+                        <DialogTitle className="text-[11px] font-mono font-bold text-yellow-500 uppercase tracking-[0.2em]">⚠ Logout Reminder</DialogTitle>
+                        <DialogDescription className="text-[10px] font-mono text-muted-foreground/30 dark:text-white/30 mt-1">Don't forget to logout the stash.</DialogDescription>
                     </DialogHeader>
                     <div className="flex justify-end px-5 py-4">
-                        <button onClick={dismissLogout} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-[#f97316] hover:bg-[#f97316]/10 transition-colors" style={{ border: "1px solid rgba(249,115,22,0.4)" }}>
+                        <button onClick={dismissLogout} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-orange-500 hover:bg-orange-500/10 transition-colors border border-orange-500/40">
                             [ Dismiss ]
                         </button>
                     </div>
@@ -269,13 +269,12 @@ export function Reminders() {
             {/* ── Bell button ── */}
             <button
                 onClick={() => setShowPanel(true)}
-                className="fixed top-3 right-4 z-50 flex items-center justify-center w-9 h-9 transition-colors"
-                style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}
+                className="fixed top-3 right-4 z-50 flex items-center justify-center w-9 h-9 transition-colors bg-muted/50 dark:bg-white/04 border border-border dark:border-white/10"
                 aria-label="Notifications"
             >
-                <Bell className="w-4 h-4 text-white/50" />
+                <Bell className="w-4 h-4 text-muted-foreground/50 dark:text-white/50" />
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-mono font-bold bg-[#f97316] text-black">
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-mono font-bold bg-orange-500 text-black">
                         {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                 )}
@@ -283,40 +282,39 @@ export function Reminders() {
 
             {/* ── Full-page notification panel ── */}
             {showPanel && (
-                <div className="fixed inset-0 z-50 flex flex-col font-mono" style={{ backgroundColor: "#080c10" }}>
+                <div className="fixed inset-0 z-50 flex flex-col font-mono bg-background dark:bg-[#080c10]">
 
                     {/* Header */}
-                    <div className="flex items-center justify-between px-6 py-3 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                    <div className="flex items-center justify-between px-6 py-3 shrink-0 border-b border-border dark:border-white/07 bg-muted/50 dark:bg-white/02">
                         <div className="flex items-center gap-3">
-                            <Bell className="w-4 h-4 text-[#f97316]" />
-                            <span className="text-[11px] font-mono font-bold text-[#f97316] uppercase tracking-[0.2em]">Notifications</span>
+                            <Bell className="w-4 h-4 text-orange-500" />
+                            <span className="text-[11px] font-mono font-bold text-orange-500 uppercase tracking-[0.2em]">Notifications</span>
                             {unreadCount > 0 && (
-                                <span className="text-[9px] font-mono px-2 py-0.5 text-[#f97316]" style={{ border: "1px solid rgba(249,115,22,0.3)" }}>
+                                <span className="text-[9px] font-mono px-2 py-0.5 text-orange-500 border border-orange-500/30">
                                     {unreadCount} unread
                                 </span>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
                             {ticketNotifications.length > 0 && (
-                                <button onClick={dismissAll} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-white/40 hover:text-[#f97316] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+                                <button onClick={dismissAll} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-muted-foreground/40 hover:text-orange-500 transition-colors border border-border dark:text-white/40 dark:border-white/07">
                                     Mark all read
                                 </button>
                             )}
-                            <button onClick={() => setShowPanel(false)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-white/40 hover:text-white transition-colors" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+                            <button onClick={() => setShowPanel(false)} className="text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 text-muted-foreground/40 hover:text-foreground transition-colors border border-border dark:text-white/40 dark:border-white/07">
                                 <X className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     </div>
 
                     {/* Search */}
-                    <div className="px-6 py-3 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="px-6 py-3 shrink-0 border-b border-border dark:border-white/06">
                         <input
                             type="text"
                             placeholder="> search notifications..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full max-w-md text-[11px] font-mono text-white/70 placeholder:text-white/20 px-3 py-1.5 focus:outline-none"
-                            style={{ backgroundColor: "#080c10", border: "1px solid rgba(255,255,255,0.08)" }}
+                            className="w-full max-w-md text-[11px] font-mono text-foreground/70 dark:text-white/70 placeholder:text-muted-foreground/20 dark:placeholder:text-white/20 px-3 py-1.5 focus:outline-none bg-background dark:bg-[#080c10] border border-border dark:border-white/08"
                         />
                     </div>
 
@@ -324,45 +322,42 @@ export function Reminders() {
                     <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2">
 
                         {/* Pending */}
-                        <div className="flex flex-col overflow-hidden" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-                            <div className="flex items-center gap-2 px-6 py-2.5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", backgroundColor: "rgba(255,255,255,0.01)" }}>
-                                <AlertCircle className="w-3.5 h-3.5 text-[#eab308]" />
-                                <span className="text-[9px] font-mono font-bold text-[#eab308] uppercase tracking-[0.2em]">Pending</span>
-                                <span className="text-[9px] font-mono text-white/25 ml-1">· {pending.length}</span>
+                        <div className="flex flex-col overflow-hidden border-r border-border dark:border-white/06">
+                            <div className="flex items-center gap-2 px-6 py-2.5 shrink-0 border-b border-border dark:border-white/06 bg-muted/30 dark:bg-white/01">
+                                <AlertCircle className="w-3.5 h-3.5 text-yellow-500" />
+                                <span className="text-[9px] font-mono font-bold text-yellow-500 uppercase tracking-[0.2em]">Pending</span>
+                                <span className="text-[9px] font-mono text-muted-foreground/25 dark:text-white/25 ml-1">· {pending.length}</span>
                             </div>
                             <div className="flex-1 overflow-y-auto">
                                 {pending.length === 0 ? (
                                     <div className="flex items-center justify-center h-32">
-                                        <span className="text-[10px] font-mono text-white/20 uppercase tracking-widest">no pending tickets</span>
+                                        <span className="text-[10px] font-mono text-muted-foreground/20 dark:text-white/20 uppercase tracking-widest">no pending tickets</span>
                                     </div>
                                 ) : pending.map((n) => {
                                     const isDismissed = dismissedTickets.includes(n.id);
                                     return (
                                         <div
                                             key={n.id}
-                                            className="px-6 py-4 transition-colors"
-                                            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", opacity: isDismissed ? 0.4 : 1, cursor: isDismissed ? "default" : "pointer" }}
-                                            onMouseEnter={e => !isDismissed && (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)")}
-                                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                                            className={`px-6 py-4 transition-colors border-b border-border dark:border-white/05 cursor-pointer hover:bg-accent dark:hover:bg-white/03 ${isDismissed ? "opacity-40 pointer-events-none" : "opacity-100"}`}
                                             onClick={() => !isDismissed && navigateToTicket(n.ticket_id, n.status)}
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-[9px] font-mono text-[#f97316]/70">{n.ticket_id}</span>
+                                                        <span className="text-[9px] font-mono text-orange-500/70">{n.ticket_id}</span>
                                                         <span className={`text-[9px] font-mono px-1.5 py-0.5 border ${getPriorityStyle(n.priority)}`}>{n.priority}</span>
                                                     </div>
-                                                    <p className="text-[11px] font-mono text-white/80 truncate mb-1">{n.ticket_subject || "No Subject"}</p>
-                                                    <div className="flex items-center gap-1.5 text-[9px] font-mono text-white/30">
+                                                    <p className="text-[11px] font-mono text-foreground/80 dark:text-white/80 truncate mb-1">{n.ticket_subject || "No Subject"}</p>
+                                                    <div className="flex items-center gap-1.5 text-[9px] font-mono text-muted-foreground/30 dark:text-white/30">
                                                         <Clock className="w-2.5 h-2.5" />
                                                         <span>Created: {formatDate(n.date_created)}</span>
                                                     </div>
                                                     {n.requestor_name && (
-                                                        <p className="text-[9px] font-mono text-white/25 mt-0.5 truncate">{n.requestor_name}</p>
+                                                        <p className="text-[9px] font-mono text-muted-foreground/25 dark:text-white/25 mt-0.5 truncate">{n.requestor_name}</p>
                                                     )}
                                                 </div>
                                                 {!isDismissed && (
-                                                    <button onClick={(e) => { e.stopPropagation(); dismissTicket(n.id); }} className="shrink-0 text-white/20 hover:text-white/60 transition-colors text-sm font-mono">×</button>
+                                                    <button onClick={(e) => { e.stopPropagation(); dismissTicket(n.id); }} className="shrink-0 text-muted-foreground/20 hover:text-muted-foreground/60 transition-colors text-sm font-mono dark:text-white/20 dark:hover:text-white/60">×</button>
                                                 )}
                                             </div>
                                         </div>
@@ -373,44 +368,41 @@ export function Reminders() {
 
                         {/* Scheduled */}
                         <div className="flex flex-col overflow-hidden">
-                            <div className="flex items-center gap-2 px-6 py-2.5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", backgroundColor: "rgba(255,255,255,0.01)" }}>
-                                <Calendar className="w-3.5 h-3.5 text-[#06b6d4]" />
-                                <span className="text-[9px] font-mono font-bold text-[#06b6d4] uppercase tracking-[0.2em]">Scheduled</span>
-                                <span className="text-[9px] font-mono text-white/25 ml-1">· {scheduled.length}</span>
+                            <div className="flex items-center gap-2 px-6 py-2.5 shrink-0 border-b border-border dark:border-white/06 bg-muted/30 dark:bg-white/01">
+                                <Calendar className="w-3.5 h-3.5 text-cyan-500" />
+                                <span className="text-[9px] font-mono font-bold text-cyan-500 uppercase tracking-[0.2em]">Scheduled</span>
+                                <span className="text-[9px] font-mono text-muted-foreground/25 dark:text-white/25 ml-1">· {scheduled.length}</span>
                             </div>
                             <div className="flex-1 overflow-y-auto">
                                 {scheduled.length === 0 ? (
                                     <div className="flex items-center justify-center h-32">
-                                        <span className="text-[10px] font-mono text-white/20 uppercase tracking-widest">no scheduled tickets</span>
+                                        <span className="text-[10px] font-mono text-muted-foreground/20 dark:text-white/20 uppercase tracking-widest">no scheduled tickets</span>
                                     </div>
                                 ) : scheduled.map((n) => {
                                     const isDismissed = dismissedTickets.includes(n.id);
                                     return (
                                         <div
                                             key={n.id}
-                                            className="px-6 py-4 transition-colors"
-                                            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", opacity: isDismissed ? 0.4 : 1, cursor: isDismissed ? "default" : "pointer" }}
-                                            onMouseEnter={e => !isDismissed && (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)")}
-                                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                                            className={`px-6 py-4 transition-colors border-b border-border dark:border-white/05 cursor-pointer hover:bg-accent dark:hover:bg-white/03 ${isDismissed ? "opacity-40 pointer-events-none" : "opacity-100"}`}
                                             onClick={() => !isDismissed && navigateToTicket(n.ticket_id, n.status)}
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-[9px] font-mono text-[#06b6d4]/70">{n.ticket_id}</span>
+                                                        <span className="text-[9px] font-mono text-cyan-500/70">{n.ticket_id}</span>
                                                         <span className={`text-[9px] font-mono px-1.5 py-0.5 border ${getPriorityStyle(n.priority)}`}>{n.priority}</span>
                                                     </div>
-                                                    <p className="text-[11px] font-mono text-white/80 truncate mb-1">{n.ticket_subject || "No Subject"}</p>
-                                                    <div className="flex items-center gap-1.5 text-[9px] font-mono text-white/30">
+                                                    <p className="text-[11px] font-mono text-foreground/80 dark:text-white/80 truncate mb-1">{n.ticket_subject || "No Subject"}</p>
+                                                    <div className="flex items-center gap-1.5 text-[9px] font-mono text-muted-foreground/30 dark:text-white/30">
                                                         <Clock className="w-2.5 h-2.5" />
                                                         <span>Scheduled: {formatDate(n.date_scheduled)}</span>
                                                     </div>
                                                     {n.requestor_name && (
-                                                        <p className="text-[9px] font-mono text-white/25 mt-0.5 truncate">{n.requestor_name}</p>
+                                                        <p className="text-[9px] font-mono text-muted-foreground/25 dark:text-white/25 mt-0.5 truncate">{n.requestor_name}</p>
                                                     )}
                                                 </div>
                                                 {!isDismissed && (
-                                                    <button onClick={(e) => { e.stopPropagation(); dismissTicket(n.id); }} className="shrink-0 text-white/20 hover:text-white/60 transition-colors text-sm font-mono">×</button>
+                                                    <button onClick={(e) => { e.stopPropagation(); dismissTicket(n.id); }} className="shrink-0 text-muted-foreground/20 hover:text-muted-foreground/60 transition-colors text-sm font-mono dark:text-white/20 dark:hover:text-white/60">×</button>
                                                 )}
                                             </div>
                                         </div>

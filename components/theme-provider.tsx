@@ -10,23 +10,14 @@ export function ThemeProvider({
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="light"
       value={{
         light: "light",
         dark: "dark",
-        system: "system",
-        disruptive: "disruptive",
-        buildchem: "buildchem",
-        prms: "prms",
-        vah: "vah",
-        ecoshift: "ecoshift",
-        outlook: "outlook",
-        viber: "viber",
       }}
     >
 
       {children}
     </NextThemesProvider>
-  );
+  )
 }

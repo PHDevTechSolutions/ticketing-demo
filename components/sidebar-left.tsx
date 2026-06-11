@@ -32,14 +32,14 @@ const navSecondary = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 mb-1 text-[9px] font-mono font-bold uppercase tracking-[0.25em] text-[#f97316]/60">
+    <p className="px-3 mb-1 text-[9px] font-mono font-bold uppercase tracking-[0.25em] text-[#f97316]/60 dark:text-[#f97316]/60">
       {children}
     </p>
   );
 }
 
 function Divider() {
-  return <div className="border-t border-[#2a2a1a] my-3 mx-3" />;
+  return <div className="border-t border-gray-200 dark:border-[#2a2a1a] my-3 mx-3" />;
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -77,11 +77,11 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar
-      className="border-r bg-[#0d1117] font-mono" 
+      className="border-r bg-white dark:bg-[#0d1117] font-mono" 
       {...props}
     >
       {/* ── Header / Logo ── */}
-      <SidebarHeader className="border-b bg-[#0d1117]">
+      <SidebarHeader className="border-b bg-white dark:bg-[#0d1117] border-gray-200 dark:border-[#2a2a1a]">
         <div className="flex items-center gap-3 px-3 py-4">
           <div
             className="flex items-center justify-center w-7 h-7 shrink-0 border font-mono font-bold text-[11px]"
@@ -94,10 +94,10 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
             H
           </div>
           <div>
-            <p className="text-[11px] font-mono font-bold text-[#e5e5d0]/90 uppercase tracking-widest">
+            <p className="text-[11px] font-mono font-bold text-gray-800 dark:text-[#e5e5d0]/90 uppercase tracking-widest">
               Help Desk
             </p>
-            <p className="text-[9px] font-mono text-[#6b6b4a]/50 uppercase tracking-[0.15em]">
+            <p className="text-[9px] font-mono text-gray-500 dark:text-[#6b6b4a]/50 uppercase tracking-[0.15em]">
               IT Ticketing System
             </p>
           </div>
@@ -105,7 +105,7 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       {/* ── Content ── */}
-      <SidebarContent className="py-4 overflow-y-auto bg-[#0d1117]">
+      <SidebarContent className="py-4 overflow-y-auto bg-white dark:bg-[#0d1117]">
 
         {/* AGENTS / Favorites */}
         <SectionLabel>Agents</SectionLabel>
@@ -119,11 +119,11 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
                 href={withId(item.url)}
                 className={`flex items-center gap-2.5 px-3 py-2 transition-colors ${
                   active
-                    ? "bg-[#1a1a0f] border-l-2 text-[#f97316]"
-                    : "text-[#e5e5d0]/60 hover:bg-[#1a1a0f] hover:text-[#e5e5d0]/90 border-l-2 border-transparent"
+                    ? "bg-orange-50 dark:bg-[#1a1a0f] border-l-2 border-[#f97316] text-[#f97316]"
+                    : "text-gray-700 dark:text-[#e5e5d0]/60 hover:bg-orange-50 dark:hover:bg-[#1a1a0f] hover:text-gray-900 dark:hover:text-[#e5e5d0]/90 border-l-2 border-transparent"
                 }`}
               >
-                <span className={`w-1.5 h-1.5 shrink-0 ${active ? "bg-[#22c55e]" : "bg-[#2a2a1a]"}`} />
+                <span className={`w-1.5 h-1.5 shrink-0 ${active ? "bg-[#22c55e]" : "bg-gray-300 dark:bg-[#2a2a1a]"}`} />
                 <Icon className="w-3.5 h-3.5 shrink-0" />
                 <span className="text-[10px] font-mono uppercase tracking-[0.15em]">{item.name}</span>
                 {active && (
@@ -151,8 +151,8 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
                 <div
                   className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${
                     anyActive && !hasMultiple
-                      ? "bg-[#1a1a0f] border-l-2 border-[#f97316] text-[#f97316]"
-                      : "text-[#e5e5d0]/60 hover:bg-[#1a1a0f] hover:text-[#e5e5d0]/90 border-l-2 border-transparent"
+                      ? "bg-orange-50 dark:bg-[#1a1a0f] border-l-2 border-[#f97316] text-[#f97316]"
+                      : "text-gray-700 dark:text-[#e5e5d0]/60 hover:bg-orange-50 dark:hover:bg-[#1a1a0f] hover:text-gray-900 dark:hover:text-[#e5e5d0]/90 border-l-2 border-transparent"
                   }`}
                   onClick={() => {
                     if (hasMultiple) {
@@ -162,12 +162,12 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
                     }
                   }}
                 >
-                  <span className={`w-1.5 h-1.5 shrink-0 ${anyActive ? "bg-[#22c55e]" : "bg-[#2a2a1a]"}`} />
+                  <span className={`w-1.5 h-1.5 shrink-0 ${anyActive ? "bg-[#22c55e]" : "bg-gray-300 dark:bg-[#2a2a1a]"}`} />
                   <WIcon className="w-3.5 h-3.5 shrink-0" />
                   <span className="text-[10px] font-mono uppercase tracking-[0.15em] flex-1">{workspace.name}</span>
                   {hasMultiple && (
                     <ChevronRight
-                      className={`w-3 h-3 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
+                      className={`w-3 h-3 shrink-0 transition-transform duration-200 text-gray-600 dark:text-[#e5e5d0]/60 ${isOpen ? "rotate-90" : ""}`}
                     />
                   )}
                   {anyActive && !hasMultiple && (
@@ -176,7 +176,7 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
                 </div>
 
                 {hasMultiple && isOpen && (
-                  <div className="ml-6 border-l border-[#2a2a1a] space-y-0.5 mt-0.5">
+                  <div className="ml-6 border-l border-gray-200 dark:border-[#2a2a1a] space-y-0.5 mt-0.5">
                     {workspace.pages.map((page) => {
                       const active = isActive(page.url);
                       return (
@@ -185,11 +185,11 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
                           href={withId(page.url)}
                           className={`flex items-center gap-2 pl-3 pr-3 py-1.5 transition-colors ${
                             active
-                              ? "text-[#f97316] bg-[#1a1a0f]"
-                              : "text-[#6b6b4a]/60 hover:text-[#e5e5d0]/80 hover:bg-[#1a1a0f]"
+                              ? "text-[#f97316] bg-orange-50 dark:bg-[#1a1a0f]"
+                              : "text-gray-600 dark:text-[#6b6b4a]/60 hover:text-gray-800 dark:hover:text-[#e5e5d0]/80 hover:bg-orange-50 dark:hover:bg-[#1a1a0f]"
                           }`}
                         >
-                          <span className={`w-1 h-1 shrink-0 ${active ? "bg-[#22c55e]" : "bg-[#2a2a1a]"}`} />
+                          <span className={`w-1 h-1 shrink-0 ${active ? "bg-[#22c55e]" : "bg-gray-300 dark:bg-[#2a2a1a]"}`} />
                           <span className="text-[9px] font-mono uppercase tracking-[0.15em]">{page.name}</span>
                           {active && (
                             <span className="ml-auto text-[9px] font-mono text-[#22c55e] uppercase tracking-widest">Active</span>
@@ -216,11 +216,11 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
                 href={withId(item.url)}
                 className={`flex items-center gap-2.5 px-3 py-2 transition-colors ${
                   active
-                    ? "bg-[#1a1a0f] border-l-2 border-[#f97316] text-[#f97316]"
-                    : "text-[#e5e5d0]/60 hover:bg-[#1a1a0f] hover:text-[#e5e5d0]/90 border-l-2 border-transparent"
+                    ? "bg-orange-50 dark:bg-[#1a1a0f] border-l-2 border-[#f97316] text-[#f97316]"
+                    : "text-gray-700 dark:text-[#e5e5d0]/60 hover:bg-orange-50 dark:hover:bg-[#1a1a0f] hover:text-gray-900 dark:hover:text-[#e5e5d0]/90 border-l-2 border-transparent"
                 }`}
               >
-                <span className={`w-1.5 h-1.5 shrink-0 ${active ? "bg-[#22c55e]" : "bg-[#2a2a1a]"}`} />
+                <span className={`w-1.5 h-1.5 shrink-0 ${active ? "bg-[#22c55e]" : "bg-gray-300 dark:bg-[#2a2a1a]"}`} />
                 <Icon className="w-3.5 h-3.5 shrink-0" />
                 <span className="text-[10px] font-mono uppercase tracking-[0.15em]">{item.title}</span>
               </a>
@@ -231,7 +231,7 @@ export function SidebarLeft(props: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       {/* ── Footer ── */}
-      <SidebarFooter className="border-t border-[#2a2a1a] px-4 py-3 bg-[#0d1117]">
+      <SidebarFooter className="border-t border-gray-200 dark:border-[#2a2a1a] px-4 py-3 bg-white dark:bg-[#0d1117]">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-[#22c55e]" />
           <span className="text-[9px] font-mono text-[#22c55e]/60 uppercase tracking-[0.2em]">
